@@ -183,7 +183,7 @@
   document.querySelectorAll('[data-reveal]').forEach((el) => io.observe(el));
   // pictures start opening just before they enter, so no closed frame reaches the screen
   const early = new IntersectionObserver(seen, { rootMargin: '0px 0px 20% 0px', threshold: 0 });
-  document.querySelectorAll('[data-open], .step__img').forEach((el) => { el.parentElement.__reveal = el; early.observe(el.parentElement); });
+  document.querySelectorAll('[data-open], .step__img').forEach((el) => { const box = el.closest('.step') || el.parentElement; box.__reveal = el; early.observe(box); });
   window.sdReady = true;
 
   // task swap: the six steps refill with a short rise
@@ -192,6 +192,33 @@
     if (reduced || !row) return;
     row.classList.remove('is-swap'); void row.offsetWidth; row.classList.add('is-swap');
   }));
+
+  // one frame for six steps: scrolling past moves through them, a chosen step stays
+  const steps = row ? [...row.children] : [];
+  if (steps.length) {
+    const wide = matchMedia('(min-width: 768px)');
+    let chosen = reduced;
+    const show = (i) => steps.forEach((s, k) => s.classList.toggle('is-on', k === i));
+    if (wide.matches) steps.forEach((s, i) => {
+      const name = s.querySelector('.step__name');
+      const go = document.createElement('button');
+      go.type = 'button'; go.className = 'step__go'; go.textContent = name.textContent;
+      name.replaceChildren(go);
+      const choose = () => { chosen = true; show(i); };
+      go.addEventListener('click', choose);
+      go.addEventListener('focus', choose);
+      go.addEventListener('pointerenter', () => show(i));
+    });
+    show(0);
+    const follow = () => {
+      if (chosen || !wide.matches) return;
+      const r = row.getBoundingClientRect(), span = innerHeight * 0.6;
+      const p = (Math.max(0, innerHeight - r.height) - r.top) / span;
+      show(Math.max(0, Math.min(steps.length - 1, Math.floor(p * steps.length))));
+    };
+    addEventListener('scroll', follow, { passive: true });
+    follow();
+  }
 
   // footer pictures crossfade, six seconds each
   const pics = [...document.querySelectorAll('.foot__pics img')];

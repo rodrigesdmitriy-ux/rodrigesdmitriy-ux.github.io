@@ -331,6 +331,30 @@ main > section + section { margin-top: var(--gap); }
   .team__note { margin-top: 16px; padding: 0; }
 }
 
+/* one frame, six names under it */
+.step > picture { display: contents; }
+@media (min-width: 768px) {
+  html.js .steps { grid-template-columns: repeat(6, minmax(0, 1fr)); row-gap: 0; margin-top: 56px; overflow-x: clip; }
+  html.js .step { display: contents; }
+  html.js .steps .step__img {
+    grid-column: 1 / -1; grid-row: 1; margin: 0 calc(-1 * var(--m)); width: calc(100% + 2 * var(--m)); max-width: none;
+    height: min(68svh, 56vw); aspect-ratio: auto; clip-path: none; opacity: 0; transform: scale(1.04);
+    transition: opacity 900ms ease, transform 2400ms var(--ease-expo);
+  }
+  html.js .step.is-on .step__img { opacity: 1; transform: none; }
+  html.js .step:nth-child(4) .step__img { object-position: 50% 62%; }
+  html.js .step:nth-child(6) .step__img { object-position: 50% 24%; }
+  html.js .step__name { grid-row: 2; margin-top: 16px; min-width: 0; }
+  .step__go { display: block; width: 100%; min-height: 48px; padding: 0; text-align: left; font: inherit; letter-spacing: inherit; color: var(--muted); background: none; border: 0; cursor: pointer; transition: color var(--t-hover) ease; }
+  .step__go:hover, .step.is-on .step__go { color: var(--ink); }
+  .step__go:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  html.js .steps .step__task, html.js .steps .step__what { grid-row: 3; min-height: 0; margin-top: 16px; opacity: 0; pointer-events: none; transition: opacity 500ms ease; }
+  html.js .steps .step__task { grid-column: 1 / 5; font: var(--w-display) var(--step-lead)/1.2 var(--display); letter-spacing: -0.01em; max-width: 24em; }
+  html.js .steps .step__what { grid-column: 5 / -1; }
+  html.js .step.is-on .step__task, html.js .step.is-on .step__what { opacity: 1; pointer-events: auto; }
+  html.js .steps.is-swap .step__task { animation-delay: 0ms; }
+}
+
 /* projects index: one case per row, the key number in gold */
 .figures { padding: 0 var(--m); }
 .figures__intro { margin-top: 28px; font-size: var(--step-body); max-width: 36em; }
@@ -773,4 +797,5 @@ main > section + section { margin-top: var(--gap); }
 @media (prefers-reduced-motion: reduce) {
   .foot__pics img { transition: none; }
   .contact__big span, .rail::before, .next b, .cx__cover, .px::before, .px__num, .board img, .lu__pic img { transition: none; }
+  html.js .steps .step__img, html.js .steps .step__task, html.js .steps .step__what { transition: none; transform: none; }
 }
