@@ -108,6 +108,29 @@
     addEventListener('scroll', rest, { passive: true });
   }
 
+  // project board: the row in the upper third of the screen takes the poster
+  const board = document.querySelector('.board');
+  if (board) {
+    const rows = [...document.querySelectorAll('.px')];
+    const pics = [...board.querySelectorAll('img')];
+    const num = board.querySelector('.board__num'), label = board.querySelector('.board__label');
+    let on = -1;
+    const show = (i) => {
+      if (i === on || !rows[i]) return;
+      const first = on < 0;
+      on = i;
+      rows.forEach((r, k) => r.classList.toggle('is-on', k === i));
+      pics.forEach((p, k) => p.classList.toggle('is-on', k === i));
+      num.textContent = rows[i].querySelector('.px__num').textContent;
+      num.style.setProperty('--n', num.textContent.trim().length);
+      label.textContent = rows[i].querySelector('.px__label').textContent;
+      if (!first && !reduced) num.animate([{ transform: 'translateY(12%)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 700, easing: 'cubic-bezier(0.16, 1, 0.3, 1)' });
+    };
+    show(0);
+    const band = new IntersectionObserver((es) => { for (const e of es) if (e.isIntersecting) show(rows.indexOf(e.target)); }, { rootMargin: '-35% 0px -65% 0px' });
+    rows.forEach((r, i) => { band.observe(r); r.addEventListener('pointerenter', () => show(i)); r.addEventListener('focusin', () => show(i)); });
+  }
+
   // entrances, once
   // a fully clipped element never intersects, so [data-open] is watched through its parent
   const seen = (entries, obs) => {
