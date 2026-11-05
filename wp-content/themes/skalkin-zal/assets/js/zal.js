@@ -91,7 +91,8 @@
     const list = q('.zal__row');
     const n = clips.length, span = 1 / (n + 1), dur = span * 0.86;
     if (!root.dataset.film) root.dataset.film = matchMedia('(orientation: portrait)').matches ? 'tall' : 'wide';
-    root.classList.add('is-film');
+    root.classList.add('is-film', 'is-boot');
+    requestAnimationFrame(() => requestAnimationFrame(() => root.classList.remove('is-boot')));
     planes.forEach((p, i) => gsap.set(p, { autoAlpha: i ? 0 : 1 }));
     list.forEach((r) => gsap.set(r, { autoAlpha: 0, y: 0 }));
     opening(tl, ctx, span, span * 0.05);
@@ -140,7 +141,7 @@
       if (dir < 0 && scrollY <= Y[0] + 1) return false;
       return true;
     };
-    const ready = (i) => { for (const k of [i - 1, i, i + 1]) wake(clips[k], root); };
+    const ready = (i) => { for (const k of [i - 1, i]) wake(clips[k], root); };
 
     let active = null, last = 0;
     const setY = (y) => {
@@ -270,7 +271,8 @@
 
     // clips of the current stop once the page is in; a reload in the middle lands on a stop
     const begin = () => (window.requestIdleCallback || setTimeout)(() => {
-      ready(Math.max(0, ys().findIndex((s) => s >= scrollY - 2)));
+      if (scrollY > 4) ready(Math.max(0, ys().findIndex((s) => s >= scrollY - 2)));
+      else for (const e of ['pointermove', 'touchstart', 'wheel', 'keydown']) addEventListener(e, () => ready(0), { signal, once: true, passive: true });
       settle();
     });
     if (document.readyState === 'complete') begin(); else addEventListener('load', begin, { signal, once: true });
