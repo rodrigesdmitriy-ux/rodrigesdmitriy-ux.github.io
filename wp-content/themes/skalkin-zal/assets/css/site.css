@@ -79,10 +79,9 @@ a { color: inherit; }
 }
 .link:hover { text-decoration-color: currentColor; }
 @media (pointer: coarse) {
-  p > .link, .about__block > .link { padding-block: 8px; }
-  .foot__links, .foot__contact, .foot__legal { row-gap: 0; }
-  .foot__links .link, .foot__contact .link { padding-block: 3px; }
-  .foot__legal .link { padding-block: 4px; }
+  p > .link, .about__block > .link { padding-block: 8px; margin-block: -8px; }
+  .foot__links .link, .foot__contact .link { padding-block: 3px; margin-block: -3px; }
+  .foot__legal .link { padding-block: 4px; margin-block: -4px; }
 }
 .link--gold { color: var(--accent); }
 
