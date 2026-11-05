@@ -217,8 +217,8 @@
     show(0);
     const follow = () => {
       if (chosen || !wide.matches) return;
-      const r = row.getBoundingClientRect(), span = innerHeight * 0.6;
-      const p = (Math.max(0, innerHeight - r.height) - r.top) / span;
+      const span = innerHeight * 0.6;
+      const p = ((rail ? rail.offsetHeight : 0) - row.closest('.team').getBoundingClientRect().top) / span;
       show(Math.max(0, Math.min(steps.length - 1, Math.floor(p * steps.length))));
     };
     addEventListener('scroll', follow, { passive: true });

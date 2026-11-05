@@ -82,7 +82,7 @@
     const paint = () => {
       const r = rect(), k = 1 - o.k;
       plane.style.transformOrigin = `${r.x}px ${r.y}px`;
-      flash.style.clipPath = `inset(${(r.y - r.h / 2) * k}px ${(r.W - r.x - r.w / 2) * k}px ${(r.H - r.y - r.h / 2) * k}px ${(r.x - r.w / 2) * k}px)`;
+      flash.style.setProperty('--card', `inset(${(r.y - r.h / 2) * k}px ${(r.W - r.x - r.w / 2) * k}px ${(r.H - r.y - r.h / 2) * k}px ${(r.x - r.w / 2) * k}px)`);
     };
     paint();
     const t = at + 0.01;
@@ -156,6 +156,18 @@
       return true;
     };
     const ready = (i) => { for (const k of [i - 1, i, i + 1]) wake(clips[k], root); };
+
+    // step counter and the way past the film
+    const skip = root.querySelector('.zal__skip');
+    const mark = () => {
+      const p = (scrollY - st.start) / (st.end - st.start), end = stops.length - 1;
+      let i = end;
+      while (i > 0 && stops[i] > p + 0.001) i--;
+      skip.classList.toggle('is-on', i > 0 && p <= stops[end] + 0.001);
+      skip.firstElementChild.textContent = `${i} / ${end}`;
+    };
+    mark();
+    addEventListener('scroll', mark, { signal, passive: true });
 
     let active = null, last = 0;
     const setY = (y) => {
@@ -276,8 +288,9 @@
     };
 
     // ponytail: a pause while dragging the scrollbar also lands on a stop, the next drag cancels it
+    let leaving = 0;
     const settle = () => {
-      if (active) return;
+      if (active || performance.now() < leaving) return;
       const Y = ys(), y = scrollY;
       if (y > Y.at(-1) + 2 || Y.some((s) => Math.abs(s - y) <= 2)) return;
       const i = Y.reduce((b, s, k) => (Math.abs(s - y) < Math.abs(Y[b] - y) ? k : b), 0);
@@ -343,6 +356,7 @@
     }, on);
 
     addEventListener('click', (e) => { if (!e.target.closest?.('a[href*="#"]')) return;
+      leaving = performance.now() + 3000;
       cancel();
       wait?.();
       if (dissolve) { dissolve.kill(); dissolve = null; jumping = false; queued = 0; gsap.set(veil, { autoAlpha: 0 }); }
