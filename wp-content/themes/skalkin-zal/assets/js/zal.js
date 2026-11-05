@@ -229,24 +229,32 @@
     ScrollTrigger.addEventListener('scrollEnd', settle);
 
     const refit = () => {
-      if (format(root, clips)) ready(Math.max(0, ys().findIndex((s) => s >= scrollY - 2)));
-      if (active) go(active.i, active.dir, true);
+      if (clips.length && format(root, clips)) ready(Math.max(0, ys().findIndex((s) => s >= scrollY - 2)));
+      if (active) go(active.i, active.dir, true); else settle();
     };
-    if (clips.length) ScrollTrigger.addEventListener('refresh', refit);
+    ScrollTrigger.addEventListener('refresh', refit);
+    // ScrollTrigger holds its own refresh until the scroll ends, too late for a running step;
+    // a phone's address bar changes only the height and must not interrupt a clip
+    let width = innerWidth;
+    addEventListener('resize', () => {
+      if (active && (!Stage.touch || innerWidth !== width)) ScrollTrigger.refresh();
+      width = innerWidth;
+    }, on);
 
     // a trackpad swipe keeps sending events for a second: it counts once; slow small deltas add up, and a tail never re-arms
     let lastWheel = 0, lastDir = 0, lastAbs = 0, sum = 0, armed = true, taken = false;
     addEventListener('wheel', (e) => {
       if (e.ctrlKey || !e.deltaY || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
       const dir = Math.sign(e.deltaY), now = performance.now(), gap = now - lastWheel, abs = Math.abs(e.deltaY) * [1, 16, innerHeight][e.deltaMode];
-      if (dir !== lastDir || gap > 320 || (gap > 140 && abs >= 3 && abs > lastAbs)) { armed = true; sum = 0; }
-      sum += abs;
+      if (dir !== lastDir) sum = 0;
+      if (gap > 320 || (abs >= 3 && (dir !== lastDir || (gap > 140 && abs > lastAbs)))) armed = true;
+      if (armed) sum += abs;
       lastWheel = now; lastDir = dir; lastAbs = abs;
       const eat = () => { e.preventDefault(); e.stopImmediatePropagation(); };
       if (takes(dir)) {
         eat();
         taken = true;
-        if (armed && sum >= 3) { armed = false; gesture(dir); }
+        if (armed && sum >= 3) { armed = false; sum = 0; gesture(dir); }
       } else if (taken && !armed) eat();
       else taken = false;
     }, hard);

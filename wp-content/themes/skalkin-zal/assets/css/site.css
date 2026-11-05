@@ -166,7 +166,7 @@ html:not(.js) .rail::before { opacity: 1; }
   .rail__nav .link { display: none; }
   .rail__menu { display: block; }
   .rail__menu summary {
-    list-style: none; cursor: pointer; min-height: 48px; display: flex; align-items: center; padding: 0 8px 0 4px;
+    list-style: none; cursor: pointer; min-height: 48px; display: flex; align-items: center; padding: 0 10px 0 4px;
     font: 500 var(--step-small)/1 var(--text);
   }
   .rail__menu summary::-webkit-details-marker { display: none; }
