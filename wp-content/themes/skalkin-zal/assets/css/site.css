@@ -177,12 +177,12 @@ html:not(.js) .rail::before { opacity: 1; }
   .rail__drop .link { font: 900 var(--step-lead)/1.5 var(--display); }
   .rail__drop .btn { margin-top: 12px; }
 }
-@media (max-width: 379px) {
+@media (max-width: 409px) {
   .rail { gap: 8px; }
   .rail__name { font-size: 1.0625rem; }
   .rail__nav .btn { padding-inline: 12px; }
 }
-@media (max-width: 339px) { .rail__name { display: none; } }
+@media (max-width: 359px) { .rail__name { display: none; } }
 
 /* upright windows use the tall frame */
 @media (orientation: portrait) {
