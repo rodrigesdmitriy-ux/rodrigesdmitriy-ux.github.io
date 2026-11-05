@@ -438,7 +438,7 @@ main > section + section { margin-top: var(--gap); }
 .lu__desc { grid-column: 1; grid-row: 2; margin-top: 12px; max-width: 34em; font: 400 var(--step-body)/1.5 var(--text); color: var(--ink); }
 .lu__d { text-align: right; font-variant-numeric: tabular-nums; }
 .lu--path { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); }
-.lu--path .lu__d { grid-column: 1; grid-row: 1 / span 2; text-align: left; white-space: nowrap; font: 900 clamp(2rem, 1rem + 3.4vw, 4.5rem)/1 var(--wide); letter-spacing: -0.03em; color: var(--accent); }
+.lu--path .lu__d { grid-column: 1; grid-row: 1 / span 2; text-align: left; white-space: nowrap; font: 900 clamp(2rem, 4.6vw, 4.5rem)/1 var(--wide); letter-spacing: -0.03em; color: var(--accent); }
 .lu--path .lu__a { grid-column: 2; grid-row: 1; }
 .lu--path .lu__wide { grid-column: 2; grid-row: 2; margin-top: 12px; }
 .lu--path .lu__wide, .lu--rule .lu__wide { font: 400 var(--step-body)/1.5 var(--text); max-width: 36em; }
