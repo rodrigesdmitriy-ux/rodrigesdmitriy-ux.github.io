@@ -674,6 +674,8 @@ main > section + section { margin-top: var(--gap); }
 .figs b { display: block; font: 400 clamp(2.5rem, 1.6rem + 3vw, 4.5rem)/0.95 var(--display); font-weight: 400; }
 .figs span { display: block; margin-top: 10px; font-size: var(--step-small); color: var(--muted); }
 .figs a:hover span { color: var(--ink); }
+.figs span:not(:last-child) { color: var(--ink); }
+.figs span + span { margin-top: 4px; }
 @media (max-width: 767px) {
   .resume-head { display: block; }
   .resume-head__pic { width: 56%; margin-bottom: 32px; }
