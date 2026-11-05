@@ -165,7 +165,7 @@ html:not(.js) .rail::before { opacity: 1; }
   .rail__nav .link { display: none; }
   .rail__menu { display: block; }
   .rail__menu summary {
-    list-style: none; cursor: pointer; min-height: 48px; display: flex; align-items: center; padding: 0 6px 0 4px;
+    list-style: none; cursor: pointer; min-height: 48px; display: flex; align-items: center; padding: 0 8px 0 4px;
     font: 500 var(--step-small)/1 var(--text);
   }
   .rail__menu summary::-webkit-details-marker { display: none; }
@@ -538,7 +538,7 @@ main > section + section { margin-top: var(--gap); }
 
 /* about: formats of work */
 .formats { margin: 4px 0 28px; }
-.formats__h { font: 500 var(--step-small)/1.4 var(--text); color: var(--muted); margin: 0 0 10px; }
+.formats__h { font: 500 var(--step-body)/1.4 var(--text); color: var(--ink); margin: 0 0 6px; }
 .formats__list { display: grid; gap: 2px; }
 .formats__list a { display: inline-flex; align-items: center; min-height: 44px; font: 900 var(--step-lead)/1.15 var(--display); }
 
