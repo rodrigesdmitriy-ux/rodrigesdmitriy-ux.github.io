@@ -82,6 +82,7 @@ a { color: inherit; }
   p > .link, .about__block > .link { padding-block: 8px; margin-block: -8px; }
   .foot__links .link, .foot__contact .link { padding-block: 3px; margin-block: -3px; }
   .foot__legal .link { padding-block: 4px; margin-block: -4px; }
+  .resume-contacts .link { padding-block: 0; margin-block: 0; }
 }
 .link--gold { color: var(--accent); }
 
@@ -205,6 +206,14 @@ html:not(.js) .rail::before { opacity: 1; }
 }
 
 /* sections */
+@media (max-width: 1099px) and (min-aspect-ratio: 5/4) {
+  .hero-shot { height: calc(100svh - var(--rail)); }
+  .hero-shot img { object-position: 67% 25%; }
+  .rail { margin-top: calc(100svh - var(--rail)); }
+}
+@media (orientation: landscape) {
+  .zal.is-live.is-film .zal__title { max-width: 50vw; }
+}
 main > section { scroll-margin-top: var(--rail); }
 main > section + section { margin-top: var(--gap); }
 .hero-detail + .scene { margin-top: var(--gap); }
@@ -219,7 +228,7 @@ main > section + section { margin-top: var(--gap); }
 .zal__row {
   position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%); min-height: 90px;
   display: grid; grid-template-columns: 10% 1fr auto; align-items: center; column-gap: var(--gutter);
-  padding: 0 var(--m); background: rgba(12, 10, 8, 0.62);
+  padding: 0 var(--m); background: linear-gradient(transparent, rgba(12, 10, 8, 0.62) 22%, rgba(12, 10, 8, 0.62) 78%, transparent);
 }
 .zal__years, .zal__fact { font-size: var(--step-small); color: var(--ink); }
 .zal__fact { text-align: right; }

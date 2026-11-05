@@ -45,7 +45,7 @@
 
   // hero loop: wide screens only, the still frame stays on phones and for saved data
   const loop = document.querySelector('.hero-shot__loop');
-  if (loop && !reduced && !navigator.connection?.saveData && matchMedia('(min-width: 768px)').matches) {
+  if (loop && !reduced && !navigator.connection?.saveData && matchMedia('(min-width: 1100px)').matches) {
     loop.addEventListener('playing', () => loop.classList.add('is-on'), { once: true });
     loop.src = loop.dataset.src;
     new IntersectionObserver(([e]) => { if (e.isIntersecting) loop.play().catch(() => {}); else loop.pause(); }).observe(loop);

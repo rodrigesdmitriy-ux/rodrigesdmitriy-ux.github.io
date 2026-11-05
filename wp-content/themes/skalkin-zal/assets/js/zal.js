@@ -66,7 +66,6 @@
     paint();
     const t = at + 0.06;
     tl.to(row, { autoAlpha: 0, y: -18, duration: 0.02, ease: 'power2.in' }, t)
-      .to(q('.zal__title'), { autoAlpha: 0, duration: 0.02 }, t)
       .set(flash, { autoAlpha: 1 }, t)
       .to(o, { k: 1, duration: FLY, ease: 'power3.in', onUpdate: paint }, t)
       .to(plane, { scale: 2.4, duration: FLY, ease: 'power3.in' }, t)
@@ -80,11 +79,12 @@
     const planes = q('.zal__plane');
     if (!clips.length || clips.length !== planes.length || (navigator.connection?.saveData && !root.dataset.film)) return false;
     const list = q('.zal__row');
-    if (!root.dataset.film) { root.dataset.film = Stage.phone ? 'tall' : 'wide'; load(root, clips); }
+    if (!root.dataset.film) { root.dataset.film = matchMedia('(orientation: portrait)').matches ? 'tall' : 'wide'; load(root, clips); }
     root.classList.add('is-film');
     planes.forEach((p, i) => gsap.set(p, { autoAlpha: i ? 0 : 1 }));
     list.forEach((r) => gsap.set(r, { autoAlpha: 0, y: 0 }));
     const span = 0.96 / clips.length;
+    tl.to(q('.zal__title'), { autoAlpha: 0, duration: 0.02 }, 0.02 + span * 0.5); // later frames need the space
     clips.forEach((v, k) => {
       const t = 0.02 + k * span;
       const dur = span * 0.7;
