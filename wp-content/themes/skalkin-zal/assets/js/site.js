@@ -1,36 +1,112 @@
-// Page behaviour: rail docking, reveals, hero drift, row of steps, footer crossfade, cookie choice.
+// Page behaviour: rail, first screen, reveals, row of steps, footer crossfade, cookie choice.
 (() => {
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const live = !!(window.gsap && window.ScrollTrigger);
 
   if (window.Stage) { Stage.smooth({ lerp: 0.1 }); Stage.init(); }
 
-  // rail takes the page ground before the hero sentence reaches it; inner pages start docked
+  // rail: its name appears after the first screen, its ground once the scene has left
   const rail = document.querySelector('.rail');
-  const lead = document.querySelector('.hero-detail .statement');
-  if (rail && lead) {
-    const dock = () => rail.classList.toggle('is-solid', lead.getBoundingClientRect().top < rail.offsetHeight + 24);
+  const hero = document.querySelector('.hero');
+  if (rail && hero) {
+    const zal = hero.closest('.zal');
+    const dock = () => {
+      rail.classList.toggle('is-past', scrollY > 10);
+      const end = zal.classList.contains('is-live') ? zal : hero;
+      rail.classList.toggle('is-solid', end.getBoundingClientRect().bottom < rail.offsetHeight);
+    };
     addEventListener('scroll', dock, { passive: true });
     addEventListener('resize', dock);
     dock();
   }
   if (rail) rail.querySelectorAll('.rail__drop a').forEach((a) => a.addEventListener('click', () => rail.querySelector('details').removeAttribute('open')));
 
-  // the default key keeps only the laptop and stool (gaps between the legs cut out), so it never lies over the rail's text
-  const OUTLINE = [867,166,1152,164,1138,367,1140,376,1148,392,1149,404,1136,425,1098,430,1122,560,1134,690,1105,693,1098,618,1048,646,1066,745,1035,748,1027,633,913,633,912,679,885,681,887,633,845,633,818,720,790,722,833,432,793,428,778,410,780,396,784,385,851,358];
-  const HOLES = [[866,433,896,433,894,584,858,598], [926,433,1016,433,1019,569,918,569], [1046,433,1071,433,1080,568,1052,568]];
-  const SRC = [1672, 941];
-  const key = document.querySelector('.hero-shot--key:not(.is-cut) img');
-  const clipKey = () => {
-    const W = key.clientWidth, H = key.clientHeight, s = Math.max(W / SRC[0], H / SRC[1]);
-    const free = [W - SRC[0] * s, H - SRC[1] * s];
-    const [ox, oy] = getComputedStyle(key).objectPosition.split(' ').map((v, i) => (v.endsWith('%') ? free[i] * parseFloat(v) / 100 : parseFloat(v)));
-    const ring = (r) => { const pts = []; for (let i = 0; i < r.length; i += 2) pts.push(`${(ox + r[i] * s).toFixed(1)}px ${(oy + r[i + 1] * s).toFixed(1)}px`); return pts; };
-    const out = ring(OUTLINE), path = [...out, out[0]];
-    for (const h of HOLES) { const r = ring(h); path.push(...r, r[0], out[0]); }
-    key.style.clipPath = `polygon(evenodd, ${path.join(',')})`;
-  };
-  if (key) { clipKey(); addEventListener('resize', clipKey); }
+  if (hero) {
+    // the default key keeps only the laptop and stool, gaps between the legs cut out
+    const SHAPES = {
+      wide: { size: [1672, 941], lamp: 960, out: [867,166,1152,164,1138,367,1140,376,1148,392,1149,404,1136,425,1098,430,1046,433,1048,646,1066,745,1035,748,1027,633,845,633,818,720,790,722,833,432,793,428,778,410,780,396,784,385,851,358], holes: [[866,433,1016,433,1025,616,857,604]] },
+      tall: { size: [720, 1280], lamp: 360, out: [230,477,489,477,489,660,505,700,511,715,505,737,463,743,488,983,460,983,452,879,261,879,252,983,223,983,248,743,211,737,205,715,215,700,230,660], holes: [[275,743,438,743,452,879,261,879]] },
+    };
+    const shape = () => SHAPES[matchMedia('(orientation: portrait)').matches ? 'tall' : 'wide'];
+    const key = hero.querySelector('.hero__key:not(.is-cut) img');
+    const clipKey = () => {
+      const { size, out, holes } = shape();
+      const W = key.clientWidth, H = key.clientHeight, s = Math.max(W / size[0], H / size[1]);
+      const ox = (W - size[0] * s) / 2, oy = (H - size[1] * s) / 2;
+      const ring = (r) => { const pts = []; for (let i = 0; i < r.length; i += 2) pts.push(`${(ox + r[i] * s).toFixed(1)}px ${(oy + r[i + 1] * s).toFixed(1)}px`); return pts; };
+      const o = ring(out), path = [...o, o[0]];
+      for (const h of holes) { const r = ring(h); path.push(...r, r[0], o[0]); }
+      key.style.clipPath = `polygon(evenodd, ${path.join(',')})`;
+    };
+    if (key) { clipKey(); addEventListener('resize', clipKey); }
+
+    // the lamp lights the surname; the pointer carries a second light and shifts the depth
+    const box = hero.querySelector('.sign');
+    const pic = hero.querySelector('.hero__pic');
+    const keyBox = hero.querySelector('.hero__key');
+    const loop = hero.querySelector('.hero__loop');
+    const first = box.querySelector('.sign__first');
+    const beam = [0.5, 0.24];
+    const aim = () => {
+      const { size, lamp } = shape();
+      const s = Math.max(innerWidth / size[0], innerHeight / size[1]);
+      first.toggleAttribute('data-sign-line', size[0] === 720);
+      beam[0] = 0.5 + (lamp / size[0] - 0.5) * size[0] * s / innerWidth;
+    };
+    let sign = null;
+    const light = () => {
+      aim();
+      sign = window.Sign ? Sign(box, { beam, still: reduced }) : null;
+      if (!sign) { box.classList.add('is-plain'); return; }
+      if (reduced || !live) { sign.state.on = 1; sign.draw(); return; }
+      sign.start();
+      const on = sign.state;
+      gsap.timeline()
+        .to(on, { on: 0.55, duration: 0.1 }, 0.25).to(on, { on: 0.12, duration: 0.08 })
+        .to(on, { on: 0.8, duration: 0.09 }).to(on, { on: 0.3, duration: 0.12 })
+        .to(on, { on: 1, duration: 1.2, ease: 'power2.out' });
+      let wait = 0;
+      addEventListener('resize', () => { clearTimeout(wait); wait = setTimeout(() => { aim(); sign.layout(); }, 200); });
+      if (!matchMedia('(pointer: coarse)').matches) {
+        addEventListener('pointermove', (e) => sign.pointer(e.clientX, e.clientY), { passive: true });
+        document.documentElement.addEventListener('pointerleave', () => sign.leave());
+      }
+    };
+    const fonts = document.fonts ? document.fonts.load('900 200px "TikTok Wide"', 'Скалкин') : Promise.resolve();
+    fonts.catch(() => {}).then(() => (window.requestIdleCallback || setTimeout)(light));
+
+    if (live && !reduced) {
+      const layers = [pic, keyBox].filter(Boolean);
+      const hand = !matchMedia('(pointer: coarse)').matches;
+      gsap.fromTo(layers, { scale: 1.05 }, { scale: hand ? 1.015 : 1, duration: 2.6, ease: 'expo.out' });
+      if (hand) {
+        gsap.set(box, { yPercent: -50, y: 0 });
+        const moves = [...layers.map((l) => [gsap.quickTo(l, 'x', { duration: 1.1, ease: 'power3' }), gsap.quickTo(l, 'y', { duration: 1.1, ease: 'power3' }), 8]), [gsap.quickTo(box, 'x', { duration: 1.4, ease: 'power3' }), gsap.quickTo(box, 'y', { duration: 1.4, ease: 'power3' }), 5]];
+        addEventListener('pointermove', (e) => {
+          if (scrollY > 4) return;
+          const nx = e.clientX / innerWidth - 0.5, ny = e.clientY / innerHeight - 0.5;
+          for (const [mx, my, k] of moves) { mx(-nx * 2 * k); my(-ny * 2 * k); }
+        }, { passive: true });
+      }
+    }
+
+    // hero loop: wide screens only, the still frame stays on phones and for saved data
+    const playLoop = loop && !reduced && !navigator.connection?.saveData && matchMedia('(min-width: 1100px) and (orientation: landscape)').matches;
+    if (playLoop) {
+      loop.addEventListener('playing', () => loop.classList.add('is-on'), { once: true });
+      addEventListener('load', () => { loop.src = loop.dataset.src; loop.play().catch(() => {}); }, { once: true });
+    }
+    // light and loop rest once the first screen is left
+    let away = false;
+    const rest = () => {
+      const now = scrollY > 4;
+      if (now === away) return;
+      away = now;
+      if (sign && !reduced) { if (now) sign.stop(); else sign.start(); }
+      if (playLoop && loop.src) { if (now) loop.pause(); else loop.play().catch(() => {}); }
+    };
+    addEventListener('scroll', rest, { passive: true });
+  }
 
   // entrances, once
   // a fully clipped element never intersects, so [data-open] is watched through its parent
@@ -42,20 +118,6 @@
   // pictures start opening just before they enter, so no closed frame reaches the screen
   const early = new IntersectionObserver(seen, { rootMargin: '0px 0px 20% 0px', threshold: 0 });
   document.querySelectorAll('[data-open], .step__img').forEach((el) => { el.parentElement.__reveal = el; early.observe(el.parentElement); });
-
-  // hero loop: wide screens only, the still frame stays on phones and for saved data
-  const loop = document.querySelector('.hero-shot__loop');
-  if (loop && !reduced && !navigator.connection?.saveData && matchMedia('(min-width: 1100px)').matches) {
-    loop.addEventListener('playing', () => loop.classList.add('is-on'), { once: true });
-    loop.src = loop.dataset.src;
-    new IntersectionObserver(([e]) => { if (e.isIntersecting) loop.play().catch(() => {}); else loop.pause(); }).observe(loop);
-  }
-
-  // hero: both layers of the exhibit drift together, the detail picture drifts on its own
-  if (live && !reduced && document.querySelector('[data-shot]')) {
-    gsap.to('[data-shot]', { yPercent: 14, ease: 'none', scrollTrigger: { trigger: document.body, start: 0, end: () => innerHeight, scrub: true } });
-    gsap.fromTo('.hero-detail__pic img', { yPercent: -6, scale: 1.08 }, { yPercent: 6, scale: 1, ease: 'none', scrollTrigger: { trigger: '.hero-detail', start: 'top bottom', end: 'bottom top', scrub: true } });
-  }
 
   // task swap: the six steps refill with a short rise
   const row = document.querySelector('.steps');

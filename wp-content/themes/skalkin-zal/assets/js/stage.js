@@ -35,10 +35,11 @@
   //   build(tl, ctx)  add the tweens to tl; the timeline runs 0 → 1 over the hold. ctx: { root, stage, phone, q }
   //   phone  'same' (default) | 'rest' (the phone gets the finished composition) | { hold, build }
   //   rest(ctx)  optional: anything extra the finished composition needs (most scenes need nothing)
+  //   after(tl, ctx)  optional: runs once the timeline is built, may return a cleanup
   // Sets --p (0-1) and data-beat on root, so CSS and captions can follow the scene too.
   Stage.scene = (root, opts = {}) => {
     if (!root) return null;
-    const { hold = 2, scrub = true, build, phone = 'same', rest, beats = 0 } = opts;
+    const { hold = 2, scrub = true, build, phone = 'same', rest, beats = 0, after } = opts;
     const stage = root.querySelector(':scope > .scene-stage') || root.firstElementChild;
     const q = (sel) => [...root.querySelectorAll(sel)];
     const toRest = (ctx) => { root.classList.remove('is-live'); root.classList.add('is-rest'); root.style.removeProperty('--hold'); if (rest) rest(ctx); };
@@ -65,7 +66,8 @@
       plan.build(tl, ctx);
       // pad the timeline to exactly 1 so positions in build() read as fractions of the hold
       if (tl.duration() < 1) tl.to({}, { duration: 1 - tl.duration() }, tl.duration());
-      return () => { root.classList.remove('is-live'); root.style.removeProperty('--hold'); root.style.removeProperty('--p'); };
+      const off = after ? after(tl, ctx) : null;
+      return () => { if (off) off(); root.classList.remove('is-live'); root.style.removeProperty('--hold'); root.style.removeProperty('--p'); };
     });
     Stage.scenes.push(mm);
     return mm;
