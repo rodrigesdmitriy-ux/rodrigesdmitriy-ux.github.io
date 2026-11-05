@@ -43,7 +43,7 @@
 }
 
 *, *::before, *::after { box-sizing: border-box; }
-html { background: var(--bg); color: var(--ink); -webkit-text-size-adjust: 100%; scroll-padding-top: var(--rail); }
+html { color-scheme: dark; background: var(--bg); color: var(--ink); -webkit-text-size-adjust: 100%; scroll-padding-top: var(--rail); }
 body { margin: 0; font: 400 var(--step-body)/1.55 var(--text); background: var(--bg); color: var(--ink); overflow-x: clip; }
 img { display: block; max-width: 100%; height: auto; }
 h1, h2, h3, p, ul, ol, figure, blockquote, fieldset { margin: 0; padding: 0; }
@@ -516,6 +516,7 @@ main > section + section { margin-top: var(--gap); }
 .cf__field { display: grid; gap: 8px; }
 .cf__field--wide { grid-column: 1 / -1; }
 .cf__label { font: 500 var(--step-small)/1.3 var(--text); }
+.cf { color-scheme: light; }
 .cf input[type="text"], .cf input[type="email"], .cf input[type="tel"], .cf textarea {
   width: 100%; min-height: 48px; padding: 12px 14px; border: 1px solid rgba(12, 10, 8, 0.55); border-radius: 0;
   background: transparent; color: var(--bg); font: 400 var(--step-body)/1.4 var(--text);
