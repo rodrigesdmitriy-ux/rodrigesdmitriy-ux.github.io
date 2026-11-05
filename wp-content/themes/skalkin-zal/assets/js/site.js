@@ -19,7 +19,12 @@
     addEventListener('resize', dock);
     dock();
   }
-  if (rail) rail.querySelectorAll('.rail__drop a').forEach((a) => a.addEventListener('click', () => rail.querySelector('details').removeAttribute('open')));
+  if (rail) {
+    const menu = rail.querySelector('details');
+    rail.querySelectorAll('.rail__drop a').forEach((a) => a.addEventListener('click', () => { menu.open = false; }));
+    addEventListener('keydown', (e) => { if (e.key === 'Escape' && menu.open) { menu.open = false; menu.querySelector('summary').focus(); } });
+    addEventListener('click', (e) => { if (menu.open && !menu.contains(e.target)) menu.open = false; });
+  }
 
   if (hero) {
     // the default key keeps only the laptop and stool, gaps between the legs cut out
@@ -198,7 +203,7 @@
   if (steps.length) {
     const wide = matchMedia('(min-width: 768px)');
     let chosen = reduced;
-    const show = (i) => steps.forEach((s, k) => s.classList.toggle('is-on', k === i));
+    const show = (i) => steps.forEach((s, k) => { s.classList.toggle('is-on', k === i); const go = s.querySelector('.step__go'); if (go) { if (k === i) go.setAttribute('aria-current', 'step'); else go.removeAttribute('aria-current'); } });
     if (wide.matches) steps.forEach((s, i) => {
       const name = s.querySelector('.step__name');
       const go = document.createElement('button');
