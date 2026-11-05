@@ -30,6 +30,19 @@
     return g;
   };
 
+  // 3x3 box, so the normals of a curve do not step
+  const smooth = (a, W, H) => {
+    const o = new Float32Array(W * H);
+    for (let y = 0; y < H; y++) {
+      const u = Math.max(0, y - 1) * W, m = y * W, d = Math.min(H - 1, y + 1) * W;
+      for (let x = 0; x < W; x++) {
+        const l = Math.max(0, x - 1), r = Math.min(W - 1, x + 1);
+        o[m + x] = (a[u + l] + a[u + x] + a[u + r] + a[m + l] + a[m + x] + a[m + r] + a[d + l] + a[d + x] + a[d + r]) / 9;
+      }
+    }
+    return o;
+  };
+
   // RG: normal, B: letter coverage, A: height
   const bake = (lines, W, H, bevel) => {
     const c = document.createElement('canvas');
@@ -47,8 +60,9 @@
     const alpha = new Uint8Array(W * H);
     for (let i = 0; i < alpha.length; i++) alpha[i] = px[i * 4 + 3];
     const dist = distance(alpha, W, H);
-    const h = new Float32Array(W * H);
-    for (let i = 0; i < h.length; i++) { const t = Math.min(dist[i] / bevel, 1); h[i] = 1 - (1 - t) * (1 - t); }
+    let h = new Float32Array(W * H);
+    for (let i = 0; i < h.length; i++) h[i] = alpha[i] > 127 ? Math.min((dist[i] - 1 + alpha[i] / 255) / bevel, 1) : 0;
+    h = smooth(smooth(h, W, H), W, H);
     const out = new Uint8Array(W * H * 4);
     const at = (a, b) => h[Math.max(0, Math.min(W - 1, a)) + Math.max(0, Math.min(H - 1, b)) * W];
     for (let b = 0; b < H; b++) {
@@ -56,8 +70,8 @@
         const i = a + b * W, o = i * 4;
         const nx = at(a - 1, b - 1) + 2 * at(a - 1, b) + at(a - 1, b + 1) - at(a + 1, b - 1) - 2 * at(a + 1, b) - at(a + 1, b + 1);
         const ny = at(a - 1, b - 1) + 2 * at(a, b - 1) + at(a + 1, b - 1) - at(a - 1, b + 1) - 2 * at(a, b + 1) - at(a + 1, b + 1);
-        out[o] = Math.max(0, Math.min(255, 127.5 + nx * bevel * 7));
-        out[o + 1] = Math.max(0, Math.min(255, 127.5 - ny * bevel * 7));
+        out[o] = Math.max(0, Math.min(255, 127.5 + nx * bevel * 11));
+        out[o + 1] = Math.max(0, Math.min(255, 127.5 - ny * bevel * 11));
         out[o + 2] = alpha[i];
         out[o + 3] = h[i] * 255;
       }
@@ -84,35 +98,44 @@
     float a = t.b;
     float aspect = res.x / res.y;
     vec3 P = vec3(v.x * aspect, v.y, 0.);
-    vec3 N = normalize(vec3((t.rg - .5) * 2., .55 + t.a * .6));
+    vec3 V = vec3(0., 0., 1.);
 
-    float patina = vn(P.xy * 2.6) * .6 + vn(P.xy * 8.) * .4;
+    // cast bronze: a calm face, the light lives on the chamfer
+    vec3 N = normalize(vec3((t.rg - .5) * 2., 1.));
+    float edge = clamp(length(t.rg - .5) * 5., 0., 1.);
+    float mottle = vn(P.xy * 1.7) * .55 + vn(P.xy * 5.) * .3 + vn(P.xy * 19.) * .15;
 
     // lamp above the exhibit, its pool falls off along the wall
     float dx = (v.x - lamp.x) / lamp.y;
-    float pool = exp(-dx * dx * .35) * on;
-    vec3 Ll = normalize(vec3((lamp.x - v.x) * aspect * .5, 1.5, 1.1));
+    float pool = exp(-dx * dx * .34) * on;
+    vec3 Ll = normalize(vec3((lamp.x - v.x) * aspect * .5, 1.5, .85));
     float dl = max(dot(N, Ll), 0.);
+    float sl = pow(max(dot(N, normalize(Ll + V)), 0.), 22.);
 
     // room fill, so the far letters still read
-    float df = max(dot(N, normalize(vec3(0., .9, .8))), 0.);
+    float df = max(dot(N, normalize(vec3(0., .75, .9))), 0.);
 
     // pointer torch
     vec3 Lp = vec3(ptr.x * aspect, ptr.y, .42) - P;
     float d2 = dot(Lp, Lp); Lp = normalize(Lp);
     float dp = max(dot(N, Lp), 0.);
+    float sp = pow(max(dot(N, normalize(Lp + V)), 0.), 40.);
     float att = ptr.z / (1. + d2 * 9.);
 
-    // painted letters, warm in the light and brown in the shade
-    float light = clamp(.5 * df * (.12 + .88 * on) + dl * pool * 1.1 + dp * att * 1.1, 0., 1.);
-    light *= mix(.74, 1., smoothstep(.1, .9, v.y));
-    vec3 c = mix(vec3(.66, .44, .22), vec3(.98, .92, .80), light) * pow(light, .9) * (.96 + (patina - .5) * .12);
-    c += (h21(gl_FragCoord.xy * .37) - .5) * .014;
+    float rise = mix(.5, 1., smoothstep(.12, .88, v.y));
+    vec3 metal = vec3(.71, .5, .29) * (.8 + mottle * .4);
+    vec3 c = metal * (df * (.05 + .36 * on) * rise + dl * pool * .95 * rise + dp * att * .85);
+    c += vec3(1., .86, .62) * edge * (sl * pool * 1.05 + df * df * df * .1 * on + sp * att * .8);
+    c += (h21(gl_FragCoord.xy * .37) - .5) * .008;
 
-    // cast shadow on the wall under the letters
-    float sh = textureLod(map, uv + vec2(0., -.05), 3.5).b * .78;
-    float alpha = a + (1. - a) * sh * .9;
-    o = vec4(max(c, 0.) * a, alpha);
+    // soft shadow on the wall: letters stand off it, the lamp is above and to the side
+    float sh = 0.;
+    for (int i = 1; i <= 5; i++) {
+      float k = float(i) / 5.;
+      sh += textureLod(map, uv + vec2((v.x - lamp.x) * .02 * k, -.06 * k), 1. + 2.6 * k).b;
+    }
+    sh *= .2 * .82;
+    o = vec4(max(c, 0.) * a, a + (1. - a) * sh);
   }`;
 
   const shader = (gl, type, src) => { const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); return s; };
@@ -147,7 +170,7 @@
 
     const layout = () => {
       const b = box.getBoundingClientRect();
-      const scale = Math.min(Math.min(devicePixelRatio || 1, 2), 1800 / b.width);
+      const scale = Math.min(devicePixelRatio || 1, 3, 4096 / b.width);
       const W = Math.round(b.width * scale), H = Math.round(b.height * scale);
       canvas.width = W; canvas.height = H;
       gl.viewport(0, 0, W, H);
@@ -163,7 +186,7 @@
         return { text, font, spacing: `${parseFloat(s.letterSpacing || 0) * scale || 0}px`, x: (r.left - b.left) * scale, y };
       });
       const size = parseFloat(getComputedStyle(box.querySelector('[data-sign-line]')).fontSize) * scale;
-      const px = bake(lines, W, H, Math.max(2, size * (state.bevel || 0.012)));
+      const px = bake(lines, W, H, Math.max(2, size * (state.bevel || 0.009)));
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, W, H, 0, gl.RGBA, gl.UNSIGNED_BYTE, px);
       gl.generateMipmap(gl.TEXTURE_2D);
       draw();

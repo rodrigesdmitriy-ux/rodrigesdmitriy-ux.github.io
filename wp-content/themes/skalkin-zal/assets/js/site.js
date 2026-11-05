@@ -44,7 +44,6 @@
     const box = hero.querySelector('.sign');
     const pic = hero.querySelector('.hero__pic');
     const keyBox = hero.querySelector('.hero__key');
-    const loop = hero.querySelector('.hero__loop');
     const first = box.querySelector('.sign__first');
     const beam = [0.5, 0.24];
     const aim = () => {
@@ -72,7 +71,7 @@
         document.documentElement.addEventListener('pointerleave', () => sign.leave());
       }
     };
-    const fonts = document.fonts ? document.fonts.load('900 200px "TikTok Wide"', 'Скалкин') : Promise.resolve();
+    const fonts = document.fonts ? document.fonts.load(getComputedStyle(box.querySelector('[data-sign-line]')).font, 'Скалкин') : Promise.resolve();
     fonts.catch(() => {}).then(() => (window.requestIdleCallback || setTimeout)(light));
 
     if (live && !reduced) {
@@ -90,20 +89,55 @@
       }
     }
 
-    // hero loop: wide screens only, the still frame stays on phones and for saved data
-    const playLoop = loop && !reduced && !navigator.connection?.saveData && matchMedia('(min-width: 1100px) and (orientation: landscape)').matches;
-    if (playLoop) {
-      loop.addEventListener('playing', () => loop.classList.add('is-on'), { once: true });
-      addEventListener('load', () => { loop.src = loop.dataset.src; loop.play().catch(() => {}); }, { once: true });
+    // dust drifting in the lamp's beam
+    let dust = null;
+    if (live && !reduced) {
+      const c = hero.appendChild(Object.assign(document.createElement('canvas'), { className: 'hero__dust' }));
+      c.setAttribute('aria-hidden', 'true');
+      const x = c.getContext('2d');
+      const mote = document.createElement('canvas');
+      mote.width = mote.height = 32;
+      const m = mote.getContext('2d'), g = m.createRadialGradient(16, 16, 0, 16, 16, 16);
+      g.addColorStop(0, 'rgba(255,226,178,1)'); g.addColorStop(0.35, 'rgba(255,214,160,.45)'); g.addColorStop(1, 'rgba(255,200,140,0)');
+      m.fillStyle = g; m.fillRect(0, 0, 32, 32);
+      const motes = [...Array(innerWidth < 700 ? 22 : 44)].map(() => ({ x: Math.random(), y: Math.random(), r: 1 + Math.random() * Math.random() * 5, vx: (Math.random() - 0.5) * 0.006, vy: -0.004 - Math.random() * 0.01, p: Math.random() * 6.28 }));
+      let W = 0, H = 0, S = 1;
+      const fit = () => {
+        const b = c.getBoundingClientRect();
+        S = Math.min(devicePixelRatio || 1, 1.5); W = c.width = Math.round(b.width * S); H = c.height = Math.round(b.height * S);
+      };
+      fit();
+      addEventListener('resize', fit, { passive: true });
+      let raf = 0, last = 0;
+      const tick = (now) => {
+        raf = requestAnimationFrame(tick);
+        if (now - last < 33) return;
+        const dt = Math.min((now - last) / 1000, 0.1);
+        last = now;
+        x.clearRect(0, 0, W, H);
+        x.globalCompositeOperation = 'lighter';
+        for (const d of motes) {
+          d.x = (d.x + d.vx * dt + 1) % 1; d.y = (d.y + d.vy * dt + 1) % 1;
+          const cone = Math.max(0, 1 - Math.abs(d.x - 0.5) * 2 / (0.35 + d.y * 0.65));
+          x.globalAlpha = cone * cone * (0.3 + 0.4 * Math.sin(now / 1900 + d.p) ** 2) * Math.min(1, (1 - d.y) * 3);
+          const r = d.r * S;
+          x.drawImage(mote, d.x * W - r, d.y * H - r, r * 2, r * 2);
+        }
+      };
+      dust = { start() { if (!raf) raf = requestAnimationFrame(tick); }, stop() { cancelAnimationFrame(raf); raf = 0; } };
+      const place = () => { const { size } = shape(); const sc = Math.max(innerWidth / size[0], innerHeight / size[1]); c.style.left = `${innerWidth / 2 + (shape().lamp - size[0] / 2) * sc}px`; };
+      place();
+      addEventListener('resize', place, { passive: true });
+      dust.start();
     }
-    // light and loop rest once the first screen is left
+    // light and dust rest once the first screen is left
     let away = false;
     const rest = () => {
       const now = scrollY > 4;
       if (now === away) return;
       away = now;
       if (sign && !reduced) { if (now) sign.stop(); else sign.start(); }
-      if (playLoop && loop.src) { if (now) loop.pause(); else loop.play().catch(() => {}); }
+      if (dust) { if (now) dust.stop(); else dust.start(); }
     };
     addEventListener('scroll', rest, { passive: true });
   }

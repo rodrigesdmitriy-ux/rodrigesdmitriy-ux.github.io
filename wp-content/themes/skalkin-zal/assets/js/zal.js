@@ -1,7 +1,8 @@
 // Scene: camera flight along Z through five lit pictures; the midline row changes at each stop.
 // Markup: section.scene[data-scene="zal"] > .scene-stage > h2 + figure.zal__stop{5} > .zal__plane(img, video.zal__clip?) + figcaption.zal__row
 // Desktop: CSS 3D (perspective per stop). Phone: crossfade with scale. Rest: five stacked panels.
-// Film: when every stop has a clip, clip k flies the camera into stop k; one gesture plays one clip, on both widths.
+// Film: when every stop has a clip, clip k flies the camera into stop k and ends on the sharp still of that stop;
+// one gesture forward plays one clip, a step back is a dissolve.
 (() => {
   const D = 1300;                        // depth between pictures, px
   const OX = [0, 0.52, -0.5, 0.48, -0.46]; // picture offsets, fraction of the viewport width
@@ -23,6 +24,7 @@
       .set(cord, { attr: { 'data-side': 1 } }, fade)
       .fromTo(cord, { autoAlpha: 0 }, { autoAlpha: 1, duration: span * 0.1, immediateRender: false }, span * 0.76)
       .to(root.querySelector('.hero'), { autoAlpha: 0, duration: fade }, 0)
+      .fromTo(q('.scene-stage'), { '--top': 0 }, { '--top': 1, duration: span * 0.46, ease: 'none' }, span * 0.3)
       .fromTo(title, { autoAlpha: 0 }, { autoAlpha: 1, duration: span * 0.1 }, span * 0.76)
       .to(title, { autoAlpha: 0, duration: 0.01 }, span * 1.02);
   };
@@ -46,7 +48,7 @@
     v.addEventListener('seeked', () => { if (v.want) { v.want = false; seek(v, v.f); } });
     v.addEventListener('loadedmetadata', () => {
       const done = () => seek(v, v.at());
-      v.play().then(() => { if (!v.live) v.pause(); done(); }, done);
+      v.play().then(() => { if (!v.live) v.pause(); done(); }, () => { v.blocked = true; done(); });
     }, { once: true });
     v.preload = 'auto';
     v.src = root.dataset.film === 'tall' ? v.dataset.tall : v.dataset.wide;
@@ -63,7 +65,7 @@
   };
 
   // Lit card in the last frame of clip 5, fractions of the frame: centre x, y, width, height.
-  const CARD = { wide: [0.5003, 0.4588, 0.0255, 0.0546], tall: [0.4972, 0.4891, 0.0472, 0.0375] };
+  const CARD = { wide: [0.5003, 0.4588, 0.0255, 0.0546], tall: [0.4983, 0.4893, 0.0451, 0.0355] };
   const FRAME = { wide: [1920, 1080], tall: [720, 1280] };
 
   // After the last clip the lit card grows over the screen and gives way to the team section.
@@ -109,13 +111,15 @@
     clips.forEach((v, k) => {
       const t = k * span;
       const o = { f: 0 };
+      const still = planes[k].querySelector('img');
       v.at = () => gsap.utils.clamp(0, 1, (tl.progress() - t) / dur); // a refresh moves the timeline without callbacks
       if (k) {
         tl.to(list[k - 1], { autoAlpha: 0, y: -18, duration: dur * 0.1, ease: 'power2.in' }, t)
-          .set(planes[k - 1], { autoAlpha: 0 }, t)
-          .set(planes[k], { autoAlpha: 1 }, t);
+          .set(planes[k], { autoAlpha: 1 }, t)
+          .to(planes[k - 1], { autoAlpha: 0, duration: span * 0.03, ease: 'none' }, t);
       }
       tl.to(o, { f: 1, duration: dur, ease: 'none', onUpdate: () => seek(v, o.f) }, t)
+        .fromTo(still, { autoAlpha: 0 }, { autoAlpha: 1, duration: (span - dur) * 0.9, ease: 'none' }, t + dur * 0.98)
         .fromTo(list[k], { autoAlpha: 0, y: 18 }, { autoAlpha: 1, y: 0, duration: dur * 0.16, ease: 'expo.out' }, t + dur * 0.84);
     });
     finale(tl, ctx, planes[n - 1], list[n - 1], n * span, span * 0.8);
@@ -128,7 +132,7 @@
   // and the clip of that step plays by itself. Past the last stop the page scrolls as usual.
   const RATE = 2;
   const steps = (tl, ctx) => {
-    const { root, stops, clips = [] } = ctx;
+    const { root, stage, stops, clips = [] } = ctx;
     const st = tl.scrollTrigger;
     const next = root.nextElementSibling;
     const cord = root.querySelector('.cord');
@@ -151,7 +155,7 @@
       if (dir < 0 && scrollY <= Y[0] + 1) return false;
       return true;
     };
-    const ready = (i) => { for (const k of [i - 1, i]) wake(clips[k], root); };
+    const ready = (i) => { for (const k of [i - 1, i, i + 1]) wake(clips[k], root); };
 
     let active = null, last = 0;
     const setY = (y) => {
@@ -206,16 +210,69 @@
       gsap.killTweensOf(pull);
       gsap.timeline().to(pull, { y: h, duration: 0.16, ease: 'power2.out' }).to(pull, { y: 0, duration: 1.1, ease: 'elastic.out(1, 0.32)' });
     };
+    // Back, an interrupted step or a clip that cannot play: a dissolve to the still of the stop.
+    const veil = clips.length ? (stage.querySelector('.zal__veil') || stage.appendChild(Object.assign(document.createElement('img'), { className: 'zal__veil', alt: '' }))) : null;
+    const heroPic = root.querySelector('.hero__pic img');
+    let jumping = false, waiting = false, queued = 0, patience = 3500, dissolve = null, wait = null;
+    const jump = (i) => {
+      cancel();
+      jumping = true;
+      const still = i > 0 && clips[i - 1] ? clips[i - 1].closest('.zal__plane').querySelector('img') : heroPic;
+      veil.src = still.currentSrc || still.src;
+      const tl = dissolve = gsap.timeline({
+        paused: true,
+        onComplete() {
+          jumping = false;
+          dissolve = null;
+          ready(i);
+          if (queued) { const d = queued; queued = 0; gesture(d); }
+        },
+      })
+        .set(veil, { autoAlpha: 0, scale: 1.02 })
+        .to(veil, { autoAlpha: 1, scale: 1, duration: 0.32, ease: 'power1.inOut' })
+        .call(() => setY(ys()[i]))
+        .to(veil, { autoAlpha: 0, duration: 0.3, ease: 'power1.out' }, '+=0.05');
+      veil.decode().catch(() => {}).then(() => { if (dissolve === tl) tl.play(); });
+    };
+    // a clip that is not ready yet gets a moment; after the first miss the wait is short
+    const whenPlayable = (clip, then) => {
+      waiting = true;
+      wake(clip, root);
+      const stop = () => {
+        clip.removeEventListener('canplay', done);
+        clip.removeEventListener('error', done);
+        clearTimeout(timer);
+        waiting = false;
+        wait = null;
+      };
+      const done = () => { stop(); then(); };
+      wait = stop;
+      const timer = setTimeout(done, patience);
+      clip.addEventListener('canplay', done);
+      clip.addEventListener('error', done);
+    };
     const gesture = (dir) => {
       tug(20);
       if (dir > 0) root.classList.add('is-stepped');
+      if (waiting) return;
+      if (jumping) { queued = dir; return; }
       if (active && active.dir === dir) {
         active.tw.timeScale(3);
         if (active.clip) active.clip.playbackRate = RATE * 3;
         return;
       }
       const i = here(dir);
-      if (i >= 0) go(i, dir, !!active);
+      if (i < 0) return;
+      if (!clips.length) return go(i, dir, !!active);
+      if (dir < 0 || active) return jump(i);
+      const clip = clips[i - 1];
+      if (!clip || clip.readyState >= 3) return go(i, dir, false);
+      if (clip.blocked) return jump(i);
+      whenPlayable(clip, () => {
+        if (clip.readyState >= 2 && !clip.blocked) return go(i, dir, false);
+        patience = 600;
+        jump(i);
+      });
     };
 
     // ponytail: a pause while dragging the scrollbar also lands on a stop, the next drag cancels it
@@ -242,19 +299,21 @@
     }, on);
 
     // a trackpad swipe keeps sending events for a second: it counts once; slow small deltas add up, and a tail never re-arms
-    let lastWheel = 0, lastDir = 0, lastAbs = 0, sum = 0, armed = true, taken = false;
+    let lastWheel = 0, lastDir = 0, lastAbs = 0, sum = 0, armed = true, taken = false, fired = 0;
     addEventListener('wheel', (e) => {
       if (e.ctrlKey || !e.deltaY || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
       const dir = Math.sign(e.deltaY), now = performance.now(), gap = now - lastWheel, abs = Math.abs(e.deltaY) * [1, 16, innerHeight][e.deltaMode];
       if (dir !== lastDir) sum = 0;
-      if (gap > 320 || (abs >= 3 && (dir !== lastDir || (gap > 140 && abs > lastAbs)))) armed = true;
+      // a mouse notch: large, separate, does not decay
+      const notch = abs >= 48 && gap > 40 && abs >= lastAbs && now - fired > 300;
+      if (gap > 320 || (abs >= 3 && (dir !== lastDir || (gap > 140 && abs > lastAbs))) || notch) armed = true;
       if (armed) sum += abs;
       lastWheel = now; lastDir = dir; lastAbs = abs;
       const eat = () => { e.preventDefault(); e.stopImmediatePropagation(); };
       if (takes(dir)) {
         eat();
         taken = true;
-        if (armed && sum >= 3) { armed = false; sum = 0; gesture(dir); }
+        if (armed && sum >= 3) { armed = false; sum = 0; fired = now; gesture(dir); }
       } else if (taken && !armed) eat();
       else taken = false;
     }, hard);
@@ -283,7 +342,11 @@
       if (!e.repeat) gesture(dir);
     }, on);
 
-    addEventListener('click', (e) => { if (e.target.closest?.('a[href*="#"]')) cancel(); }, { signal, capture: true });
+    addEventListener('click', (e) => { if (!e.target.closest?.('a[href*="#"]')) return;
+      cancel();
+      wait?.();
+      if (dissolve) { dissolve.kill(); dissolve = null; jumping = false; queued = 0; gsap.set(veil, { autoAlpha: 0 }); }
+    }, { signal, capture: true });
 
     // the cord: click, keyboard or a pull of 30 px
     let down = null, pulled = false;
@@ -304,7 +367,10 @@
     // clips of the current stop once the page is in; a reload in the middle lands on a stop
     const begin = () => (window.requestIdleCallback || setTimeout)(() => {
       if (scrollY > 4) ready(Math.max(0, ys().findIndex((s) => s >= scrollY - 2)));
-      else for (const e of ['pointermove', 'touchstart', 'wheel', 'keydown']) addEventListener(e, () => ready(0), { signal, once: true, passive: true });
+      else {
+        setTimeout(() => wake(clips[0], root), 1200);
+        for (const e of ['pointermove', 'touchstart', 'wheel', 'keydown']) addEventListener(e, () => ready(0), { signal, once: true, passive: true });
+      }
       settle();
     });
     if (document.readyState === 'complete') begin(); else addEventListener('load', begin, { signal, once: true });
