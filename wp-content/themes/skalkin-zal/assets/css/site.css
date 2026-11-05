@@ -362,7 +362,10 @@ main > section + section { margin-top: var(--gap); }
   display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: var(--gutter); padding: 56px;
 }
 .about__h { grid-column: 1 / 8; grid-row: 1; font: 400 var(--step-head)/0.92 var(--display); letter-spacing: -0.02em; max-width: 9em; }
-@media (min-width: 1100px) { .about__h { position: sticky; top: calc(var(--rail) + 24px); align-self: start; } }
+@media (min-width: 1100px) {
+  .about__panel { grid-template-rows: 1fr calc(45.6vw - 16px); }
+  .about__h { position: sticky; top: calc(var(--rail) + 24px); align-self: start; }
+}
 .about__portrait {
   position: absolute; left: 56px; bottom: 0; width: 38vw; aspect-ratio: 2 / 3; transform: translateY(20%);
   background: var(--bg); border-radius: 999px 999px 0 0; overflow: clip;
