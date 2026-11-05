@@ -38,7 +38,7 @@
         v.preload = 'auto';
         v.src = tall ? v.dataset.tall : v.dataset.wide;
       });
-    }, { rootMargin: '150% 0px' });
+    }, { rootMargin: '100% 0px' });
     io.observe(root);
   };
 

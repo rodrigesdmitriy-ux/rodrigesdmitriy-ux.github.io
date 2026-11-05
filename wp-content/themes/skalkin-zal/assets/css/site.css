@@ -78,6 +78,12 @@ a { color: inherit; }
   transition: text-decoration-color var(--t-hover) ease, color var(--t-hover) ease;
 }
 .link:hover { text-decoration-color: currentColor; }
+@media (pointer: coarse) {
+  p > .link, .about__block > .link { padding-block: 8px; }
+  .foot__links, .foot__contact, .foot__legal { row-gap: 0; }
+  .foot__links .link, .foot__contact .link { padding-block: 3px; }
+  .foot__legal .link { padding-block: 4px; }
+}
 .link--gold { color: var(--accent); }
 
 /* hero: the exhibit under the rail, its cut-out above it */
