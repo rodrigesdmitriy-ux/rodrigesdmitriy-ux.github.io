@@ -58,6 +58,8 @@
       aim();
       sign = window.Sign ? Sign(box, { beam, still: reduced }) : null;
       if (!sign) { box.classList.add('is-plain'); return; }
+      let wait = 0;
+      addEventListener('resize', () => { clearTimeout(wait); wait = setTimeout(() => { aim(); sign.layout(); }, 200); });
       if (reduced || !live) { sign.state.on = 1; sign.draw(); return; }
       sign.start();
       const on = sign.state;
@@ -65,8 +67,6 @@
         .to(on, { on: 0.55, duration: 0.1 }, 0.25).to(on, { on: 0.12, duration: 0.08 })
         .to(on, { on: 0.8, duration: 0.09 }).to(on, { on: 0.3, duration: 0.12 })
         .to(on, { on: 1, duration: 1.2, ease: 'power2.out' });
-      let wait = 0;
-      addEventListener('resize', () => { clearTimeout(wait); wait = setTimeout(() => { aim(); sign.layout(); }, 200); });
       if (!matchMedia('(pointer: coarse)').matches) {
         addEventListener('pointermove', (e) => sign.pointer(e.clientX, e.clientY), { passive: true });
         document.documentElement.addEventListener('pointerleave', () => sign.leave());
@@ -127,8 +127,17 @@
       if (!first && !reduced) num.animate([{ transform: 'translateY(12%)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 700, easing: 'cubic-bezier(0.16, 1, 0.3, 1)' });
     };
     show(0);
-    const band = new IntersectionObserver((es) => { for (const e of es) if (e.isIntersecting) show(rows.indexOf(e.target)); }, { rootMargin: '-35% 0px -65% 0px' });
-    rows.forEach((r, i) => { band.observe(r); r.addEventListener('pointerenter', () => show(i)); r.addEventListener('focusin', () => show(i)); });
+    // pixels: engines disagree on what a percent margin is taken from
+    let band;
+    const watch = () => {
+      band?.disconnect();
+      const top = Math.round(innerHeight * 0.35);
+      band = new IntersectionObserver((es) => { for (const e of es) if (e.isIntersecting) show(rows.indexOf(e.target)); }, { rootMargin: `-${top}px 0px -${innerHeight - top - 1}px 0px` });
+      rows.forEach((r) => band.observe(r));
+    };
+    watch();
+    addEventListener('resize', watch);
+    rows.forEach((r, i) => { r.addEventListener('pointerenter', () => show(i)); r.addEventListener('focusin', () => show(i)); });
   }
 
   // entrances, once
@@ -141,6 +150,7 @@
   // pictures start opening just before they enter, so no closed frame reaches the screen
   const early = new IntersectionObserver(seen, { rootMargin: '0px 0px 20% 0px', threshold: 0 });
   document.querySelectorAll('[data-open], .step__img').forEach((el) => { el.parentElement.__reveal = el; early.observe(el.parentElement); });
+  window.sdReady = true;
 
   // task swap: the six steps refill with a short rise
   const row = document.querySelector('.steps');

@@ -52,18 +52,28 @@
     v.src = root.dataset.film === 'tall' ? v.dataset.tall : v.dataset.wide;
   };
 
+  // Clip format follows the device orientation; returns true when loaded clips were dropped.
+  const format = (root, clips) => {
+    const kind = matchMedia('(orientation: portrait)').matches ? 'tall' : 'wide';
+    if (root.dataset.film === kind) return false;
+    root.dataset.film = kind;
+    let dropped = false;
+    for (const v of clips) if (v.src) { v.removeAttribute('src'); v.load(); dropped = true; }
+    return dropped;
+  };
+
   // Lit card in the last frame of clip 5, fractions of the frame: centre x, y, width, height.
   const CARD = { wide: [0.5003, 0.4588, 0.0255, 0.0546], tall: [0.4972, 0.4891, 0.0472, 0.0375] };
   const FRAME = { wide: [1920, 1080], tall: [720, 1280] };
 
   // After the last clip the lit card grows over the screen and gives way to the team section.
   const finale = (tl, { root, stage }, plane, row, at, FLY) => {
-    const kind = root.dataset.film;
-    const [fx, fy, fw, fh] = CARD[kind];
-    const [vw, vh] = FRAME[kind];
     const flash = stage.querySelector('.zal__flash') || stage.appendChild(Object.assign(document.createElement('div'), { className: 'zal__flash' }));
     const o = { k: 0 };
     const rect = () => {
+      const kind = root.dataset.film;
+      const [fx, fy, fw, fh] = CARD[kind];
+      const [vw, vh] = FRAME[kind];
       const W = stage.clientWidth, H = stage.clientHeight, s = Math.max(W / vw, H / vh);
       return { W, H, x: W / 2 + (fx - 0.5) * vw * s, y: H / 2 + (fy - 0.5) * vh * s, w: fw * vw * s, h: fh * vh * s };
     };
@@ -90,7 +100,7 @@
     if (!clips.length || clips.length !== planes.length || (navigator.connection?.saveData && !root.dataset.film)) return false;
     const list = q('.zal__row');
     const n = clips.length, span = 1 / (n + 1), dur = span * 0.86;
-    if (!root.dataset.film) root.dataset.film = matchMedia('(orientation: portrait)').matches ? 'tall' : 'wide';
+    format(root, clips);
     root.classList.add('is-film', 'is-boot');
     requestAnimationFrame(() => requestAnimationFrame(() => root.classList.remove('is-boot')));
     planes.forEach((p, i) => gsap.set(p, { autoAlpha: i ? 0 : 1 }));
@@ -157,6 +167,7 @@
       if (clip) { clip.live = false; clip.pause(); seek(clip, clip.at()); }
     };
     const go = (i, dir, quick) => {
+      const keep = document.activeElement === cord || !!active?.keep;
       cancel();
       const Y = ys(), o = { y: scrollY };
       const clip = dir > 0 && !quick && Math.abs(scrollY - Y[i - 1]) <= 2 ? clips[i - 1] : null;
@@ -180,9 +191,15 @@
           active = null;
           if (clip) { clip.live = false; clip.pause(); seek(clip, 1); }
           ready(i);
+          // the cord is hidden past the last stop: focus goes on to the section it opened
+          if (keep && i === Y.length - 1) {
+            const h = next.querySelector('h2');
+            h.tabIndex = -1;
+            h.focus({ preventScroll: true });
+          }
         },
       });
-      active = { tw, clip, dir };
+      active = { tw, clip, dir, i, keep };
     };
 
     const tug = (h) => {
@@ -211,18 +228,25 @@
     };
     ScrollTrigger.addEventListener('scrollEnd', settle);
 
-    // a trackpad swipe keeps sending events for a second: it counts once, small tails do not start a step
-    let lastWheel = 0, lastDir = 0, lastAbs = 0, armed = true, taken = false;
+    const refit = () => {
+      if (format(root, clips)) ready(Math.max(0, ys().findIndex((s) => s >= scrollY - 2)));
+      if (active) go(active.i, active.dir, true);
+    };
+    if (clips.length) ScrollTrigger.addEventListener('refresh', refit);
+
+    // a trackpad swipe keeps sending events for a second: it counts once; slow small deltas add up, and a tail never re-arms
+    let lastWheel = 0, lastDir = 0, lastAbs = 0, sum = 0, armed = true, taken = false;
     addEventListener('wheel', (e) => {
       if (e.ctrlKey || !e.deltaY || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
-      const dir = Math.sign(e.deltaY), now = performance.now(), gap = now - lastWheel, abs = Math.abs(e.deltaY);
-      if (dir !== lastDir || gap > 320 || (gap > 140 && abs > lastAbs)) armed = true;
+      const dir = Math.sign(e.deltaY), now = performance.now(), gap = now - lastWheel, abs = Math.abs(e.deltaY) * [1, 16, innerHeight][e.deltaMode];
+      if (dir !== lastDir || gap > 320 || (gap > 140 && abs >= 3 && abs > lastAbs)) { armed = true; sum = 0; }
+      sum += abs;
       lastWheel = now; lastDir = dir; lastAbs = abs;
       const eat = () => { e.preventDefault(); e.stopImmediatePropagation(); };
       if (takes(dir)) {
         eat();
         taken = true;
-        if (armed && abs >= 3) { armed = false; gesture(dir); }
+        if (armed && sum >= 3) { armed = false; gesture(dir); }
       } else if (taken && !armed) eat();
       else taken = false;
     }, hard);
@@ -277,7 +301,7 @@
     });
     if (document.readyState === 'complete') begin(); else addEventListener('load', begin, { signal, once: true });
 
-    return () => { ctx.ac.abort(); clearInterval(nudge); ScrollTrigger.removeEventListener('scrollEnd', settle); cancel(); };
+    return () => { ctx.ac.abort(); clearInterval(nudge); ScrollTrigger.removeEventListener('scrollEnd', settle); ScrollTrigger.removeEventListener('refresh', refit); cancel(); };
   };
 
   const plain = (tl, ctx, n) => {

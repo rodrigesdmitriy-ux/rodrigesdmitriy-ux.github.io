@@ -122,22 +122,26 @@
     const canvas = box.querySelector('canvas');
     const gl = canvas && canvas.getContext('webgl2', { alpha: true, premultipliedAlpha: true, antialias: false, powerPreference: 'low-power' });
     if (!gl) return null;
-    const prog = gl.createProgram();
-    gl.attachShader(prog, shader(gl, gl.VERTEX_SHADER, VS));
-    gl.attachShader(prog, shader(gl, gl.FRAGMENT_SHADER, FS));
-    gl.linkProgram(prog);
-    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) return null;
-    gl.useProgram(prog);
-    gl.bindVertexArray(gl.createVertexArray());
-    const u = (n) => gl.getUniformLocation(prog, n);
-    const U = { res: u('res'), lamp: u('lamp'), ptr: u('ptr'), on: u('on') };
-    const tex = gl.createTexture();
-    gl.bindTexture(gl.TEXTURE_2D, tex);
-    gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    let U;
+    const setup = () => {
+      const prog = gl.createProgram();
+      gl.attachShader(prog, shader(gl, gl.VERTEX_SHADER, VS));
+      gl.attachShader(prog, shader(gl, gl.FRAGMENT_SHADER, FS));
+      gl.linkProgram(prog);
+      if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) return false;
+      gl.useProgram(prog);
+      gl.bindVertexArray(gl.createVertexArray());
+      const u = (n) => gl.getUniformLocation(prog, n);
+      U = { res: u('res'), lamp: u('lamp'), ptr: u('ptr'), on: u('on') };
+      gl.bindTexture(gl.TEXTURE_2D, gl.createTexture());
+      gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      return true;
+    };
+    if (!setup()) return null;
 
     const state = { on: still ? 1 : 0, px: 0.5, py: 0.5, tx: 0.5, ty: 0.5, tz: 0, pz: 0, raf: 0, last: 0, run: false, touch: matchMedia('(pointer: coarse)').matches, t0: performance.now() };
 
@@ -189,6 +193,20 @@
       state.pz += (state.tz - state.pz) * 0.06;
       draw();
     };
+
+    // the styled text stands in until the context comes back
+    canvas.addEventListener('webglcontextlost', (e) => {
+      e.preventDefault();
+      cancelAnimationFrame(state.raf);
+      box.classList.replace('is-lit', 'is-plain');
+    });
+    canvas.addEventListener('webglcontextrestored', () => {
+      if (!setup()) return;
+      layout();
+      box.classList.replace('is-plain', 'is-lit');
+      cancelAnimationFrame(state.raf);
+      if (state.run) state.raf = requestAnimationFrame(frame);
+    });
 
     const api = {
       canvas,
