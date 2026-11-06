@@ -194,7 +194,7 @@
         clip.playbackRate = RATE;
         clip.currentTime = 0;
         clip.play().catch(() => { clip.live = false; });
-        duration = (clip.duration || 7.9) / RATE / 0.86;
+        duration = (clip.duration || 9.5) / RATE / 0.86;
         ease = 'none';
       } else if (dir > 0 && !quick) {
         duration = i === Y.length - 1 ? 2.2 : 1.5;
