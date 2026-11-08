@@ -238,6 +238,18 @@ html:not(.js) .rail::before { opacity: 1; }
 @media (orientation: portrait) and (max-height: 700px) {
   .hero__useful { display: none; }
 }
+/* phones: compact resume button; heights where it would reach the laptop keep plain links */
+@media (orientation: portrait) and (max-width: 519px) {
+  .hero__useful { font-size: var(--step-small); }
+  .hero__links { margin-top: 12px; }
+  .hero__cta { min-height: 44px; font-size: 1rem; padding: 0 18px; }
+}
+@media (orientation: portrait) and (max-width: 767px) and (max-height: 649px), (orientation: portrait) and (max-width: 767px) and (min-height: 701px) and (max-height: 839px) {
+  .hero__links { margin-top: 12px; gap: 4px 24px; }
+  .hero__cta, .hero__cta:hover { background: none; color: var(--accent); min-height: 0; padding: 12px 0; margin: -12px 0; font: inherit; }
+  .rail__nav .btn--line { background: var(--ink); color: var(--bg); box-shadow: none; }
+  .rail__nav .btn--line:hover { background: #ffffff; }
+}
 @media (max-height: 800px) and (orientation: landscape) { .hero__useful, .hero__statement { display: none; } }
 /* low landscape windows keep the name and the role */
 @media (max-height: 560px) and (orientation: landscape) {
