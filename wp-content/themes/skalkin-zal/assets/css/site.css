@@ -118,6 +118,7 @@ html:not(.js) .hero__key { display: none; }
 .hero__useful { margin-top: 10px; font-size: var(--step-body); line-height: 1.4; }
 .hero__statement { margin-top: 8px; font-size: var(--step-body); line-height: 1.4; }
 .hero__links { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 4px 24px; font-size: var(--step-body); }
+@media (orientation: landscape) and (min-width: 1280px) { .hero__role { width: max(100%, 31rem); } }
 
 /* museum label beside the laptop */
 .exhibit { max-width: 17rem; }
