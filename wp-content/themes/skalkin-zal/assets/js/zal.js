@@ -118,8 +118,12 @@
           .set(planes[k], { autoAlpha: 1 }, t)
           .to(planes[k - 1], { autoAlpha: 0, duration: span * 0.03, ease: 'none' }, t);
       }
+      // arrival: the light dips while the camera slows, the sharp still takes over in the dip
+      // before the clip's own dissolve into it, then the light comes back
       tl.to(o, { f: 1, duration: dur, ease: 'none', onUpdate: () => seek(v, o.f) }, t)
-        .fromTo(still, { autoAlpha: 0 }, { autoAlpha: 1, duration: (span - dur) * 0.9, ease: 'none' }, t + dur * 0.98)
+        .fromTo(planes[k], { '--dim': 0 }, { '--dim': 1, duration: dur * 0.06, ease: 'sine.inOut' }, t + dur * 0.77)
+        .fromTo(still, { autoAlpha: 0 }, { autoAlpha: 1, duration: dur * 0.04, ease: 'sine.inOut' }, t + dur * 0.81)
+        .to(planes[k], { '--dim': 0, duration: dur * 0.16, ease: 'power1.out' }, t + dur * 0.86)
         .fromTo(list[k], { autoAlpha: 0, y: 18 }, { autoAlpha: 1, y: 0, duration: dur * 0.16, ease: 'expo.out' }, t + dur * 0.84);
     });
     finale(tl, ctx, planes[n - 1], list[n - 1], n * span, span * 0.8);
