@@ -8,6 +8,74 @@
 <link rel="preload" href="https://rodrigesdmitriy-ux.github.io/wp-content/themes/skalkin-zal/assets/fonts/spectral-500-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="https://rodrigesdmitriy-ux.github.io/wp-content/themes/skalkin-zal/assets/fonts/tiktok-sans-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="https://rodrigesdmitriy-ux.github.io/wp-content/themes/skalkin-zal/assets/fonts/tiktok-wide-700-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
+<script>// First visit of the session: the hall stays dark until the fonts, the first screen and the first clip are in.
+(() => {
+  const root = document.documentElement;
+  let seen = false;
+  try { seen = !!sessionStorage.getItem('sdSeen'); sessionStorage.setItem('sdSeen', '1'); } catch (e) { /* no storage: shown again */ }
+  if (seen) return;
+  root.classList.add('is-loading');
+
+  // the page under the curtain does not scroll or step
+  const KEYS = [' ', 'ArrowDown', 'ArrowUp', 'PageDown', 'PageUp', 'Home', 'End'];
+  const hold = (e) => {
+    if (e.type === 'keydown' && !KEYS.includes(e.key)) return;
+    if (e.cancelable) e.preventDefault();
+    e.stopImmediatePropagation();
+  };
+  const HELD = ['wheel', 'touchmove', 'keydown'];
+  for (const n of HELD) addEventListener(n, hold, { capture: true, passive: false });
+
+  const SHORTEST = 1100, LONGEST = 7000; // ms on screen
+  const t0 = performance.now();
+  let shown = 0, clip = 0, over = false, box = null, last = t0;
+
+  const finish = () => {
+    if (over) return;
+    over = true;
+    for (const n of HELD) removeEventListener(n, hold, { capture: true });
+    root.classList.remove('is-loading');
+    if (!box) return;
+    box.classList.add('is-out');
+    setTimeout(() => box.remove(), 900);
+  };
+  // whatever happens to the page, the curtain goes
+  setTimeout(finish, LONGEST + 3000);
+
+  const goal = (t) => {
+    if (t > LONGEST) return 1;
+    if (document.readyState === 'loading') return 0;
+    const faces = [...document.fonts];
+    const fonts = faces.some((f) => f.status === 'loaded') && document.fonts.status === 'loaded' ? 1 : 0;
+    const pics = [...document.images].filter((i) => i.loading !== 'lazy' && i.getAttribute('src'));
+    const seenPics = pics.length ? pics.filter((i) => i.complete).length / pics.length : 1;
+    const v = document.querySelector('.zal.is-film .zal__clip');
+    if (v ? v.error : document.readyState === 'complete') clip = 1;
+    else if (v && v.duration) clip = Math.max(clip, v.readyState > 3 ? 1 : v.buffered.length ? v.buffered.end(v.buffered.length - 1) / v.duration : 0);
+    return Math.min(fonts * 0.15 + seenPics * 0.35 + clip * 0.5, t / SHORTEST);
+  };
+
+  const frame = (now) => {
+    if (over) return;
+    const want = goal(now - t0);
+    // eased by the clock: a slow frame rate does not hold the curtain
+    shown = want - shown < 0.004 ? want : shown + (want - shown) * (1 - Math.exp((last - now) / 130));
+    last = now;
+    box ||= document.querySelector('.loader');
+    if (box) {
+      const n = Math.round(shown * 100);
+      box.style.setProperty('--p', shown.toFixed(3));
+      box.setAttribute('aria-valuenow', n);
+      box.firstElementChild.textContent = n;
+      // the number waits for its own font
+      if (!box.classList.contains('is-on') && document.fonts.size && document.fonts.check('700 16px "TikTok Wide"', '0')) box.classList.add('is-on');
+    }
+    if (shown >= 1) return void setTimeout(finish, 220);
+    requestAnimationFrame(frame);
+  };
+  requestAnimationFrame(frame);
+})();
+</script>
 <link rel="preload" as="image" href="https://rodrigesdmitriy-ux.github.io/wp-content/themes/skalkin-zal/assets/img/hero-laptop.webp" media="(orientation: landscape)" fetchpriority="high">
 <link rel="preload" as="image" href="https://rodrigesdmitriy-ux.github.io/wp-content/themes/skalkin-zal/assets/img/hero-laptop-916.webp" media="(orientation: portrait)" fetchpriority="high">
 
@@ -33,12 +101,13 @@ img:is([sizes=auto i],[sizes^="auto," i]){contain-intrinsic-size:3000px 1500px}
 </style>
 
 <link rel='stylesheet' id='sd-stage-css' href='https://rodrigesdmitriy-ux.github.io/wp-content/themes/skalkin-zal/assets/css/stage.css?ver=1793041947' media='all' />
-<link rel='stylesheet' id='sd-site-css' href='https://rodrigesdmitriy-ux.github.io/wp-content/themes/skalkin-zal/assets/css/site.css?ver=1794347675' media='all' />
+<link rel='stylesheet' id='sd-site-css' href='https://rodrigesdmitriy-ux.github.io/wp-content/themes/skalkin-zal/assets/css/site.css?ver=1794349682' media='all' />
 <link rel="icon" href="https://rodrigesdmitriy-ux.github.io/wp-content/themes/skalkin-zal/assets/img/icon.png"><link rel="apple-touch-icon" href="https://rodrigesdmitriy-ux.github.io/wp-content/themes/skalkin-zal/assets/img/icon.png">
 <meta name="theme-color" content="#0c0a08">
 <meta property="og:image" content="https://rodrigesdmitriy-ux.github.io/wp-content/themes/skalkin-zal/assets/img/og.jpg">
 </head>
 <body class="home wp-singular page-template-default page page-id-1015 wp-theme-skalkin-zal is-home">
+<div class="loader" role="progressbar" aria-label="Загрузка" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span class="loader__num" aria-hidden="true">0</span><span class="loader__line" aria-hidden="true"><i></i></span></div>
 <a class="skip" href="#main">К&nbsp;содержанию</a>
 <header class="rail" id="top">
 	<p class="rail__name"><a href="#top">Дмитрий Скалкин</a></p>
@@ -187,14 +256,14 @@ img:is([sizes=auto i],[sizes^="auto," i]){contain-intrinsic-size:3000px 1500px}
 							<li class="px" data-reveal>
 					<span class="px__pic" aria-hidden="true"><img src="https://rodrigesdmitriy-ux.github.io/wp-content/themes/skalkin-zal/assets/img/case-portal.webp" width="1600" height="900" alt="" loading="lazy" decoding="async"></span>
 					<span class="px__year">2024</span>
-					<span class="px__name"><a href="https://rodrigesdmitriy-ux.github.io/cases/portal-traffic/">Контентный портал: с 4&nbsp;000 до&nbsp;44&nbsp;000 пользователей</a><small>Международная <span class="nb">IT-компания</span> · PM (Web, AI) и и. о. CMO</small></span>
+					<span class="px__name"><a href="https://rodrigesdmitriy-ux.github.io/cases/portal-traffic/">Контентный портал: с 4&nbsp;000 до&nbsp;44&nbsp;000 пользователей</a><small>Международная <span class="nb">IT-компания</span> · PM (Web,&nbsp;AI) и и. о. CMO</small></span>
 					<span class="px__num">×11</span>
 					<span class="px__label">трафик за&nbsp;год</span>
 				</li>
 							<li class="px" data-reveal>
 					<span class="px__pic" aria-hidden="true"><img src="https://rodrigesdmitriy-ux.github.io/wp-content/themes/skalkin-zal/assets/img/case-builder.webp" width="1600" height="900" alt="" loading="lazy" decoding="async"></span>
 					<span class="px__year">2024&#8288;–&#8288;2025</span>
-					<span class="px__name"><a href="https://rodrigesdmitriy-ux.github.io/cases/no-code-ai-builder/">Конструктор лендингов с <span class="nb">AI-ассистентом</span></a><small>Международная <span class="nb">IT-компания</span> · PM (Web, AI)</small></span>
+					<span class="px__name"><a href="https://rodrigesdmitriy-ux.github.io/cases/no-code-ai-builder/">Конструктор лендингов с <span class="nb">AI-ассистентом</span></a><small>Международная <span class="nb">IT-компания</span> · PM (Web,&nbsp;AI)</small></span>
 					<span class="px__num">200+</span>
 					<span class="px__label">лендингов за&nbsp;полгода</span>
 				</li>
@@ -208,7 +277,7 @@ img:is([sizes=auto i],[sizes^="auto," i]){contain-intrinsic-size:3000px 1500px}
 							<li class="px" data-reveal>
 					<span class="px__pic" aria-hidden="true"><img src="https://rodrigesdmitriy-ux.github.io/wp-content/themes/skalkin-zal/assets/img/case-clinic.webp" width="1600" height="900" alt="" loading="lazy" decoding="async"></span>
 					<span class="px__year">2021&#8288;–&#8288;2022</span>
-					<span class="px__name"><a href="https://rodrigesdmitriy-ux.github.io/cases/medclinic-online/">Онлайн-запись для&nbsp;сети клиник</a><small>Сеть медицинских клиник (по&nbsp;NDA) · Team Lead / PM</small></span>
+					<span class="px__name"><a href="https://rodrigesdmitriy-ux.github.io/cases/medclinic-online/">Онлайн-запись для&nbsp;сети клиник</a><small>Сеть медицинских клиник (по&nbsp;NDA) · Team Lead&nbsp;/ PM</small></span>
 					<span class="px__num">−50%</span>
 					<span class="px__label">нагрузка на&nbsp;менеджеров</span>
 				</li>
@@ -222,7 +291,7 @@ img:is([sizes=auto i],[sizes^="auto," i]){contain-intrinsic-size:3000px 1500px}
 							<li class="px" data-reveal>
 					<span class="px__pic" aria-hidden="true"><img src="https://rodrigesdmitriy-ux.github.io/wp-content/themes/skalkin-zal/assets/img/case-akku.webp" width="1600" height="900" alt="" loading="lazy" decoding="async"></span>
 					<span class="px__year">2021&#8288;–&#8288;2022</span>
-					<span class="px__name"><a href="https://rodrigesdmitriy-ux.github.io/cases/akku-shop/">Магазин аккумуляторов с подбором по&nbsp;авто</a><small>Магазин аккумуляторов (по&nbsp;NDA) · Team Lead / PM</small></span>
+					<span class="px__name"><a href="https://rodrigesdmitriy-ux.github.io/cases/akku-shop/">Магазин аккумуляторов с подбором по&nbsp;авто</a><small>Магазин аккумуляторов (по&nbsp;NDA) · Team Lead&nbsp;/ PM</small></span>
 					<span class="px__num">×2,5</span>
 					<span class="px__label">заявок с сайта</span>
 				</li>
@@ -236,14 +305,14 @@ img:is([sizes=auto i],[sizes^="auto," i]){contain-intrinsic-size:3000px 1500px}
 							<li class="px" data-reveal>
 					<span class="px__pic" aria-hidden="true"><img src="https://rodrigesdmitriy-ux.github.io/wp-content/themes/skalkin-zal/assets/img/case-altai.webp" width="1600" height="900" alt="" loading="lazy" decoding="async"></span>
 					<span class="px__year">2022&#8288;–&#8288;2023</span>
-					<span class="px__name"><a href="https://rodrigesdmitriy-ux.github.io/cases/altai-travel-portal/">Туристический портал Алтая</a><small>Туристическая компания · Team Lead / PM</small></span>
+					<span class="px__name"><a href="https://rodrigesdmitriy-ux.github.io/cases/altai-travel-portal/">Туристический портал Алтая</a><small>Туристическая компания · Team Lead&nbsp;/ PM</small></span>
 					<span class="px__num">×4</span>
 					<span class="px__label">глубина просмотра</span>
 				</li>
 							<li class="px" data-reveal>
 					<span class="px__pic" aria-hidden="true"><img src="https://rodrigesdmitriy-ux.github.io/wp-content/themes/skalkin-zal/assets/img/case-tradein.webp" width="1600" height="900" alt="" loading="lazy" decoding="async"></span>
 					<span class="px__year">2022&#8288;–&#8288;2023</span>
-					<span class="px__name"><a href="https://rodrigesdmitriy-ux.github.io/cases/trade-in-shop/">Магазин электроники с <span class="nb">трейд-ином</span></a><small>Проект с <span class="nb">трейд-ином</span> (по&nbsp;NDA) · Team Lead / PM</small></span>
+					<span class="px__name"><a href="https://rodrigesdmitriy-ux.github.io/cases/trade-in-shop/">Магазин электроники с <span class="nb">трейд-ином</span></a><small>Проект с <span class="nb">трейд-ином</span> (по&nbsp;NDA) · Team Lead&nbsp;/ PM</small></span>
 					<span class="px__num">MVP</span>
 					<span class="px__label">запущен в срок</span>
 				</li>
@@ -270,12 +339,12 @@ img:is([sizes=auto i],[sizes^="auto," i]){contain-intrinsic-size:3000px 1500px}
 			</div>
 			<div class="about__side">
 				<div class="about__block" data-reveal style="--d:90ms">
-					<h3 class="about__sub">Компаниям и фаундерам (Head of&nbsp;Digital / CMO / Tech PM)</h3>
+					<h3 class="about__sub">Компаниям и фаундерам (Head&nbsp;of&nbsp;Digital&nbsp;/ CMO&nbsp;/ Tech PM)</h3>
 					<p>Закрываю разрыв между бизнесом, разработкой и маркетингом:</p>
 					<ul class="about__list">
-													<li><b>Свой среди разработчиков и маркетологов.</b> Вырос из&nbsp;fullstack-разработки (PHP, JS, SQL, CMS) до&nbsp;руководителя <span class="nb">веб-направления</span> и и. о. CMO. Сложность задачи оцениваю по&nbsp;коду, поэтому сроки называю реальные, а рекламные кампании привязываю к релизам.</li>
+													<li><b>Свой среди разработчиков и маркетологов.</b> Вырос из&nbsp;fullstack-разработки (PHP,&nbsp;JS, SQL, CMS) до&nbsp;руководителя <span class="nb">веб-направления</span> и и. о. CMO. Сложность задачи оцениваю по&nbsp;коду, поэтому сроки называю реальные, а рекламные кампании привязываю к релизам.</li>
 													<li><b>Управление людьми и процессами.</b> Выстраивал работу команд до&nbsp;23&nbsp;человек по&nbsp;Scrum и Kanban: SLA в Jira и Битрикс24, декомпозиция задач, релизы по&nbsp;графику.</li>
-													<li><b>Сквозная аналитика и ROI.</b> Управлял бюджетами 7 млн+&nbsp;₽/мес (Яндекс Директ, Google Ads, SEO, контент). Считаю отдачу через Roistat и CRM до&nbsp;реальной выручки.</li>
+													<li><b>Сквозная аналитика и ROI.</b> Управлял бюджетами 7 млн+&nbsp;₽/&#8288;мес (Яндекс&nbsp;Директ, Google Ads, SEO, контент). Считаю отдачу через Roistat и CRM до&nbsp;реальной выручки.</li>
 													<li><b>AI там, где он&nbsp;окупается.</b> Ставлю агентные пайплайны на&nbsp;рутину: разбор фидов, типовой код, проверку данных, черновики текстов. Это экономит ФОТ и ускоряет <span class="nb">Time-to-Market</span> в 3&#8288;–&#8288;5 раз.</li>
 											</ul>
 					<a class="link link--down" href="https://rodrigesdmitriy-ux.github.io/resume/skalkin-dmitrii-resume.pdf" download>Скачать резюме</a>
@@ -314,7 +383,7 @@ img:is([sizes=auto i],[sizes^="auto," i]){contain-intrinsic-size:3000px 1500px}
 						<span class="lu__pic"><img src="https://rodrigesdmitriy-ux.github.io/wp-content/themes/skalkin-zal/assets/img/case-tools.webp" width="1600" height="900" alt="" loading="lazy" decoding="async"></span>
 						<span class="lu__a">
 															<a href="https://rodrigesdmitriy-ux.github.io/cases/b2b-tool-store/">B2B <span class="nb">E-commerce</span> платформа инструмента</a>
-													</span><span class="lu__desc">Собираю каталог на&nbsp;10&nbsp;000+ SKU по&nbsp;5&nbsp;товарным направлениям: номенклатура из&nbsp;фидов поставщиков, двусторонний обмен ценами и остатками с 1С, гибридный чекаут (онлайн-оплата и оптовый счёт).</span><span class="lu__meta"><span class="lu__b">для&nbsp;клиента</span><span class="lu__c"><span class="nb">1С-Битрикс</span></span><span class="lu__d">с августа 2026</span></span>
+													</span><span class="lu__desc">Собираю каталог на&nbsp;10&nbsp;000+ SKU по&nbsp;5&nbsp;товарным направлениям: номенклатура из&nbsp;фидов поставщиков, двусторонний обмен ценами и остатками с 1С, гибридный чекаут (онлайн-оплата&nbsp;и оптовый счёт).</span><span class="lu__meta"><span class="lu__b">для&nbsp;клиента</span><span class="lu__c"><span class="nb">1С-Битрикс</span></span><span class="lu__d">с августа 2026</span></span>
 					</li>
 									<li class="lu lu--card lu--link" data-reveal>
 						<span class="lu__pic"><img src="https://rodrigesdmitriy-ux.github.io/wp-content/themes/skalkin-zal/assets/img/case-bar.webp" width="1600" height="900" alt="" loading="lazy" decoding="async"></span>
@@ -346,7 +415,7 @@ img:is([sizes=auto i],[sizes^="auto," i]){contain-intrinsic-size:3000px 1500px}
 			<ul class="lineup__rows">
 									<li class="lu lu--path" data-reveal><span class="lu__a">Код</span><span class="lu__wide">Fullstack-разработка: PHP, SQL, JS, вёрстка, кастомные модули для&nbsp;CMS и интеграции по&nbsp;API. Писал это сам, поэтому знаю, как продукт устроен под&nbsp;капотом.</span><span class="lu__d">до&nbsp;2019</span></li>
 									<li class="lu lu--path" data-reveal><span class="lu__a">Команды</span><span class="lu__wide">Team Lead и IT Project Manager. Управлял командами разработки, запускал <span class="nb">e-commerce-проекты</span>, переводил отделы продаж на&nbsp;Битрикс24 и настраивал сквозную аналитику.</span><span class="lu__d">2019&#8288;–&#8288;2023</span></li>
-									<li class="lu lu--path" data-reveal><span class="lu__a">Направление</span><span class="lu__wide">Руководитель <span class="nb">веб-направления</span> и и. о. CMO в международной <span class="nb">IT-компании</span>. Управлял командой до&nbsp;23&nbsp;человек и бюджетом 7 млн+&nbsp;₽/мес, продвигал <span class="nb">B2B-решения</span> на&nbsp;рынках РФ, Германии и Китая. Вырастил органический трафик портала в 11&nbsp;раз, внедрил AI в контент и запуск лендингов.</span><span class="lu__d">2023&#8288;–&#8288;2026</span></li>
+									<li class="lu lu--path" data-reveal><span class="lu__a">Направление</span><span class="lu__wide">Руководитель <span class="nb">веб-направления</span> и и. о. CMO в международной <span class="nb">IT-компании</span>. Управлял командой до&nbsp;23&nbsp;человек и бюджетом 7 млн+&nbsp;₽/&#8288;мес, продвигал <span class="nb">B2B-решения</span> на&nbsp;рынках РФ, Германии и Китая. Вырастил органический трафик портала в 11&nbsp;раз, внедрил AI в контент и запуск лендингов.</span><span class="lu__d">2023&#8288;–&#8288;2026</span></li>
 									<li class="lu lu--path" data-reveal><span class="lu__a">Команда <span class="nb">AI-агентов</span></span><span class="lu__wide">Независимый digital-руководитель и <span class="nb">AI-архитектор</span>. Веду клиентские проекты по&nbsp;разработке и автоматизации и развиваю свои продукты на&nbsp;мультиагентном <span class="nb">AI-конвейере</span>.</span><span class="lu__d">2026</span></li>
 							</ul>
 		</div>
@@ -416,7 +485,7 @@ img:is([sizes=auto i],[sizes^="auto," i]){contain-intrinsic-size:3000px 1500px}
 <script id="gsap-st-js" src="https://rodrigesdmitriy-ux.github.io/wp-content/themes/skalkin-zal/assets/vendor/ScrollTrigger.min.js?ver=3.15.0"></script>
 <script id="lenis-js" src="https://rodrigesdmitriy-ux.github.io/wp-content/themes/skalkin-zal/assets/vendor/lenis.min.js?ver=1.3.26"></script>
 <script id="sd-stage-js" src="https://rodrigesdmitriy-ux.github.io/wp-content/themes/skalkin-zal/assets/js/stage.js?ver=1793869616"></script>
-<script id="sd-zal-js" src="https://rodrigesdmitriy-ux.github.io/wp-content/themes/skalkin-zal/assets/js/zal.js?ver=1794346467"></script>
+<script id="sd-zal-js" src="https://rodrigesdmitriy-ux.github.io/wp-content/themes/skalkin-zal/assets/js/zal.js?ver=1794349272"></script>
 <script id="sd-sound-js" src="https://rodrigesdmitriy-ux.github.io/wp-content/themes/skalkin-zal/assets/js/sound.js?ver=1794346745"></script>
 <script id="sd-site-js" src="https://rodrigesdmitriy-ux.github.io/wp-content/themes/skalkin-zal/assets/js/site.js?ver=1794347873"></script>
 </body>

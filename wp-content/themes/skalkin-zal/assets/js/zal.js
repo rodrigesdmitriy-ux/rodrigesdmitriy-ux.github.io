@@ -407,7 +407,8 @@
     const begin = () => (window.requestIdleCallback || setTimeout)(() => {
       if (scrollY > 4) ready(Math.max(0, ys().findIndex((s) => s >= scrollY - 2)));
       else {
-        setTimeout(() => wake(clips[0], root), 1200);
+        // behind the loader the first clip is wanted at once
+        setTimeout(() => wake(clips[0], root), document.documentElement.classList.contains('is-loading') ? 0 : 1200);
         for (const e of ['pointermove', 'touchstart', 'wheel', 'keydown']) addEventListener(e, () => ready(0), { signal, once: true, passive: true });
       }
       settle();
