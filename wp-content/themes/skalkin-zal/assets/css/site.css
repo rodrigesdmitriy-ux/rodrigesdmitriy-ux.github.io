@@ -127,13 +127,36 @@ html:not(.js) .hero__key { display: none; }
 
 .hero__text { position: absolute; z-index: 3; left: var(--m); top: calc(50svh + (var(--band) - var(--cy)) * var(--fs) + 0.5 * var(--sz)); bottom: 24px; display: flex; flex-direction: column; justify-content: flex-end; width: min(calc(50vw + (600 - var(--cx)) * var(--fs) - var(--m) - 24px), 34rem); }
 .hero__role { font: var(--w-display) var(--step-lead)/1.1 var(--display); letter-spacing: -0.01em; }
-.hero__useful { margin-top: 10px; font-size: var(--step-body); line-height: 1.4; }
+.hero__useful { margin-top: 12px; font-size: var(--step-body); line-height: 1.4; }
 .hero__statement { margin-top: 8px; font-size: var(--step-small); line-height: 1.4; color: #a9a196; }
+.hero__statement.is-figs { display: grid; grid-template-columns: repeat(3, auto); justify-content: start; align-items: start; gap: 14px clamp(20px, 2.4vw, 40px); width: max-content; max-width: calc(100vw - 2 * var(--m)); margin-top: 14px; line-height: 1.25; color: #b9b1a5; }
+.hero__statement.is-figs span { display: grid; gap: 6px; max-width: 10.5em; }
+.hero__statement.is-figs b { font: 700 clamp(1.5rem, 1rem + 1vw, 2.5rem)/1 var(--wide); letter-spacing: -0.02em; color: var(--accent); white-space: nowrap; }
+.hero__statement.is-figs ~ .hero__links { margin-top: 20px; }
+.exhibit__figs { display: none !important; }
 .hero__links { margin-top: 20px; margin-bottom: auto; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 28px; font-size: var(--step-body); }
 .hero__cta { font-size: 1.0625rem; padding: 0 22px; }
 .hero__go { display: inline-flex; align-items: center; }
 @media (orientation: landscape) and (min-width: 1280px) { .hero__role { width: max(100%, 31rem); } }
-@media (orientation: landscape) { .hero__links { width: calc(100vw - 2 * var(--m)); } }
+@media (orientation: landscape) {
+  .hero__links { width: calc(100vw - 2 * var(--m)); }
+  /* the phrase runs up to the stool; the zone under the name shows what fits it */
+  .hero__text { bottom: 20px; container: hero / size; }
+  .hero__useful { width: min(calc(50vw + (760 - var(--cx)) * var(--fs) - var(--m)), 42rem); }
+}
+@media (orientation: landscape) and (max-width: 1599px) { .hero__useful { font-size: min(var(--step-body), 1.0625rem); } }
+@container hero (max-height: 275px) { .hero__useful { display: none; } }
+@container hero (max-height: 225px) {
+  .hero__statement.is-figs { margin-top: 10px; font-size: 0.8125rem; }
+  .hero__statement.is-figs b { font-size: 1.5rem; }
+  .hero__statement.is-figs ~ .hero__links { margin-top: 16px; }
+}
+@container hero (max-height: 198px) { .hero__text .hero__statement { display: none; } }
+/* narrower windows wrap the role into more lines */
+@media (max-width: 1279px) {
+  @container hero (max-height: 340px) { .hero__useful { display: none; } }
+  @container hero (max-height: 250px) { .hero__text .hero__statement { display: none; } }
+}
 @media (orientation: landscape) and (max-aspect-ratio: 7/5) { .hero__span { display: none; } }
 @media (orientation: landscape) and (min-width: 1280px) and (max-aspect-ratio: 7/5) { .hero__useful, .hero__statement { font-size: 0.9375rem; } }
 
@@ -223,7 +246,7 @@ html:not(.js) .rail::before { opacity: 1; }
   .js .sign.is-plain .sign__first { animation-delay: 0s; }
   .js .sign.is-lit .sign__first { animation: none; opacity: 0; }
   .sign__first.has-img { position: relative; inset: auto; color: transparent; font-kerning: none; }
-  .sign__first.has-img .sign__img { display: block; position: absolute; left: 50%; top: -0.16em; height: 1.62em; width: auto; max-width: none; translate: -50% 0; pointer-events: none; user-select: none; }
+  .sign__first.has-img .sign__img { display: block; position: absolute; left: 50%; top: -0.2em; height: 1.62em; width: auto; max-width: none; translate: -50% 0; pointer-events: none; user-select: none; }
   .sign__last.has-img .sign__img { top: -0.16em; }
   .js .sign .sign__first.has-img { opacity: 1; animation: sign-on 1.6s linear 0.25s both; }
   .hero__kicker, .hero__span { display: none; }
@@ -231,13 +254,19 @@ html:not(.js) .rail::before { opacity: 1; }
   .hero .exhibit__year { margin: 0 !important; }
   .hero .exhibit__title { padding: 0; border: 0; font-size: 1.25rem; }
   .hero .exhibit__text { grid-column: 1 / -1; margin-top: 4px !important; color: #c9c2b8; }
-  .hero__statement { display: none; }
+  .hero__text .hero__statement { display: none; }
+  .hero .exhibit__figs { width: auto; max-width: none; display: grid !important; grid-column: 1 / -1; justify-content: space-between; gap: 0 12px; margin: 0 0 10px; font-size: clamp(0.75rem, 3.2vw, 0.8125rem); color: #c9c2b8; }
+  .hero .exhibit__figs span { gap: 5px; max-width: none; }
+  .hero .exhibit__figs b { font-size: clamp(1.125rem, 5.4vw, 2rem); }
   .cord { left: calc(100vw - var(--m) - 14px); height: calc(50svh + (560 - 640) * var(--fs0) - var(--rail)); --fs0: max(calc(100vw / 720), calc(100svh / 1280)); }
   .cord__label { right: 50%; top: calc(100% + 4px); bottom: auto; width: 5em; white-space: normal; text-align: right; }
 }
 @media (orientation: portrait) and (max-height: 700px) {
   .hero__useful { display: none; }
 }
+/* phones: each caption in two lines; short screens keep the name clear */
+@media (orientation: portrait) and (max-width: 599px) { .hero .exhibit__figs { grid-template-columns: min-content min-content 1fr; gap: 0 10px; } }
+@media (orientation: portrait) and (max-height: 659px) { .hero .exhibit__figs { display: none !important; } }
 /* phones: compact resume button; heights where it would reach the laptop keep plain links */
 @media (orientation: portrait) and (max-width: 519px) {
   .hero__useful { font-size: var(--step-small); }
@@ -250,10 +279,11 @@ html:not(.js) .rail::before { opacity: 1; }
   .rail__nav .btn--line { background: var(--ink); color: var(--bg); box-shadow: none; }
   .rail__nav .btn--line:hover { background: #ffffff; }
 }
-@media (max-height: 800px) and (orientation: landscape) { .hero__useful, .hero__statement { display: none; } }
+@supports not (container-type: size) { @media (max-height: 800px) and (orientation: landscape) { .hero__useful, .hero__statement { display: none; } } }
+@media (max-height: 800px) and (orientation: landscape) { .hero__statement:not(.is-figs) { display: none; } }
 /* low landscape windows keep the name and the role */
 @media (max-height: 560px) and (orientation: landscape) {
-  .hero__useful, .hero__links, .hero .exhibit, .hero__kicker, .hero__span { display: none; }
+  .hero__useful, .hero__statement, .hero__links, .hero .exhibit, .hero__kicker, .hero__span { display: none; }
   .hero__role { font-size: 1.125rem; }
 }
 
