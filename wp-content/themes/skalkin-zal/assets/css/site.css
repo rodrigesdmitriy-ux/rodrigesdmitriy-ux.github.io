@@ -752,6 +752,22 @@ main > section + section { margin-top: var(--gap); }
   .cx__cover span:not(.huge) { margin-top: 12px; font-size: var(--step-small); }
   .cx:hover .cx__cover, .cx:focus-within .cx__cover { opacity: 1; clip-path: inset(0); }
 }
+@supports (grid-template-columns: subgrid) {
+  /* the category column is never narrower than its longest word */
+  @media (min-width: 768px) {
+    .cases__list { display: grid; grid-template-columns: minmax(min-content, calc((100% - 11 * var(--gutter)) / 6 + var(--gutter))) repeat(10, minmax(0, 1fr)); column-gap: var(--gutter); }
+    .cx { grid-column: 1 / -1; grid-template-columns: subgrid; }
+    .cx__cat { grid-column: 1; }
+    .cx__title { grid-column: 2 / 7; }
+    .cx__metric { grid-column: 7 / 10; }
+    .cx__year { grid-column: 10 / 12; }
+  }
+  @media (min-width: 1100px) and (hover: hover) {
+    .cx__title { grid-column: 2 / 6; }
+    .cx__metric { grid-column: 6 / 8; }
+    .cx__year { grid-column: 8 / 9; }
+  }
+}
 @media (max-width: 767px) {
   .cx { grid-template-columns: 1fr auto; row-gap: 6px; padding: 16px 0; }
   .cx__cat { grid-column: 1; grid-row: 1; font: 400 var(--step-small)/1.4 var(--text); }
@@ -776,7 +792,7 @@ main > section + section { margin-top: var(--gap); }
 .case-cover__img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .results { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr)); gap: 40px var(--gutter); }
 .results li { container-type: inline-size; }
-.result__num { display: block; font: var(--w-wide) min(clamp(2.5rem, 1.3rem + 3.6vw, 5rem), 19cqw)/0.95 var(--wide); letter-spacing: -0.03em; }
+.result__num { display: block; font: var(--w-wide) min(clamp(2.5rem, 1.3rem + 3.6vw, 5rem), 19cqw, 95cqw / var(--n, 5))/0.95 var(--wide); letter-spacing: -0.03em; }
 .result__ttl { display: block; margin-top: 14px; font-weight: 500; }
 .result__sub { display: block; margin-top: 4px; color: var(--muted); font-size: var(--step-small); }
 .stack { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -825,9 +841,14 @@ main > section + section { margin-top: var(--gap); }
 .dl-rows dt { font: var(--w-display) var(--step-lead)/1.2 var(--display); }
 .dl-rows dd { margin: 0; }
 .dl-rows dd small { display: block; color: var(--muted); font-size: var(--step-small); }
-.figs { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 13rem), 1fr)); gap: 32px var(--gutter); }
+@supports (grid-template-columns: subgrid) {
+  /* the label column is never narrower than its longest word */
+  .dl-rows { grid-template-columns: minmax(min-content, 1fr) minmax(0, 2.4fr); column-gap: var(--gutter); }
+  .dl-rows > div { grid-column: 1 / -1; grid-template-columns: subgrid; }
+}
+.figs { --fig: clamp(2rem, 1.3rem + 2.4vw, 3.5rem); display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, max(13rem, 4.8 * var(--fig))), 1fr)); gap: 32px var(--gutter); }
 .figs a { text-decoration: none; display: block; }
-.figs b { display: block; font: var(--w-wide) clamp(2rem, 1.3rem + 2.4vw, 3.5rem)/1 var(--wide); letter-spacing: -0.03em; }
+.figs b { display: block; font: var(--w-wide) var(--fig)/1 var(--wide); letter-spacing: -0.03em; }
 .figs span { display: block; margin-top: 10px; font-size: var(--step-small); color: var(--muted); }
 .figs a:hover span { color: var(--ink); }
 .figs span:not(:last-child) { color: var(--ink); }
