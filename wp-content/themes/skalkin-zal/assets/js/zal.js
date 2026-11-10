@@ -219,6 +219,19 @@
         },
       });
       active = { tw, clip, dir, i, keep };
+      if (!clip) return;
+      // the clip is the clock: a late start holds the scroll with it; a clip stuck for over a second lets the scroll go on alone
+      tw.pause();
+      let was = -1, seen = performance.now();
+      const tick = () => {
+        if (active?.tw !== tw) return gsap.ticker.remove(tick);
+        const now = performance.now(), ct = clip.currentTime;
+        if (ct !== was) { was = ct; seen = now; }
+        if (!clip.ended && clip.live && now - seen < 1500) return tw.time(ct / RATE);
+        gsap.ticker.remove(tick);
+        tw.play();
+      };
+      gsap.ticker.add(tick);
     };
 
     const tug = (h) => {
