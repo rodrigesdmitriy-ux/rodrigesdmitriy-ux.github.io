@@ -45,6 +45,32 @@
     };
     if (key) { clipKey(); addEventListener('resize', clipKey); }
 
+    // upright windows: the text above the laptop gives up the button form, the lead, then the second link until it fits
+    const text = hero.querySelector('.hero__text');
+    const links = hero.querySelector('.hero__links');
+    const FITS = ['', 'fit-plain', 'fit-brief', 'fit-plain fit-brief', 'fit-plain fit-brief fit-solo'];
+    const fitText = () => {
+      const html = document.documentElement;
+      const tall = matchMedia('(orientation: portrait)').matches;
+      for (const set of tall ? FITS : ['']) {
+        html.classList.remove('fit-plain', 'fit-brief', 'fit-solo');
+        if (set) html.classList.add(...set.split(' '));
+        if (links.offsetTop + links.offsetHeight <= text.clientHeight + 1) break;
+      }
+      // the figures under the name give way when they would touch its letters
+      const figs = hero.querySelector('.exhibit__figs'), word = hero.querySelector('.sign__last');
+      html.classList.remove('fit-nofigs');
+      if (!tall || !figs || !word || !figs.offsetHeight) return;
+      // the block may still be rising into place
+      const rise = new DOMMatrixReadOnly(getComputedStyle(figs.parentElement).transform).m42;
+      if (figs.getBoundingClientRect().top - rise - word.getBoundingClientRect().bottom < 16) html.classList.add('fit-nofigs');
+    };
+    if (text && links) {
+      fitText();
+      addEventListener('resize', fitText);
+      if (document.fonts) document.fonts.ready.then(fitText);
+    }
+
     // the lamp lights the surname; the pointer carries a second light and shifts the depth
     const box = hero.querySelector('.sign');
     const pic = hero.querySelector('.hero__pic');
@@ -184,7 +210,8 @@
   const seen = (entries, obs) => {
     for (const e of entries) if (e.isIntersecting) { (e.target.__reveal || e.target).classList.add('is-in'); obs.unobserve(e.target); }
   };
-  const io = new IntersectionObserver(seen, { rootMargin: '0px 0px -10% 0px', threshold: 0.08 });
+  // no share of the block is asked for: a tall one on a phone would stay hidden for most of a screen
+  const io = new IntersectionObserver(seen, { rootMargin: '0px 0px -10% 0px', threshold: 0 });
   document.querySelectorAll('[data-reveal]').forEach((el) => io.observe(el));
   // pictures start opening just before they enter, so no closed frame reaches the screen
   const early = new IntersectionObserver(seen, { rootMargin: '0px 0px 20% 0px', threshold: 0 });

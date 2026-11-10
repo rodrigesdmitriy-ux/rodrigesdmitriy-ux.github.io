@@ -184,6 +184,7 @@
       active = null;
       tw.kill();
       if (clip) { clip.live = false; clip.pause(); seek(clip, clip.at()); }
+      root.dispatchEvent(new Event('zal:cancel'));
     };
     const go = (i, dir, quick) => {
       const keep = document.activeElement === cord || !!active?.keep;
@@ -197,6 +198,7 @@
         clip.playbackRate = RATE;
         clip.currentTime = 0;
         clip.play().catch(() => { clip.live = false; });
+        root.dispatchEvent(new CustomEvent('zal:flight', { detail: { k: i, clip } }));
         // the scroll follows the clip, then passes the rest of the span quickly
         const run = (clip.duration || 5) / RATE, a = run / (run + 0.2);
         duration = run + 0.2;
