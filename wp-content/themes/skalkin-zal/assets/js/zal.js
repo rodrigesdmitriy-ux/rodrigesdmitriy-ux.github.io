@@ -132,6 +132,7 @@
   // One gesture, one step: wheel, finger, keys and the lamp cord move the page between the stops,
   // and the clip of that step plays by itself. Past the last stop the page scrolls as usual.
   const RATE = 1; // the clips carry their own speed
+  const HURRY = 2; // a repeated gesture: 30 frames a second doubled fall evenly on a 60 Hz screen
   const steps = (tl, ctx) => {
     const { root, stage, stops, clips = [] } = ctx;
     const st = tl.scrollTrigger;
@@ -286,8 +287,8 @@
       if (waiting) return;
       if (jumping) { queued = dir; return; }
       if (active && active.dir === dir) {
-        active.tw.timeScale(3);
-        if (active.clip) active.clip.playbackRate = RATE * 3;
+        active.tw.timeScale(HURRY);
+        if (active.clip) active.clip.playbackRate = RATE * HURRY;
         return;
       }
       const i = here(dir);
