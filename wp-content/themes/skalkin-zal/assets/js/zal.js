@@ -210,6 +210,7 @@
         onUpdate() { if (Math.abs(scrollY - last) > 8) return cancel(); setY(o.y); },
         onComplete() {
           active = null;
+          landed = performance.now();
           if (clip) { clip.live = false; clip.pause(); seek(clip, 1); }
           ready(i);
           // the cord is hidden past the last stop: focus goes on to the section it opened
@@ -243,7 +244,7 @@
     // Back, an interrupted step or a clip that cannot play: a dissolve to the still of the stop.
     const veil = clips.length ? (stage.querySelector('.zal__veil') || stage.appendChild(Object.assign(document.createElement('img'), { className: 'zal__veil', alt: '' }))) : null;
     const heroPic = root.querySelector('.hero__pic img');
-    let jumping = false, waiting = false, queued = 0, patience = 3500, dissolve = null, wait = null;
+    let jumping = false, waiting = false, queued = 0, patience = 3500, dissolve = null, wait = null, heading = 0, landed = 0;
     const jump = (i) => {
       cancel();
       jumping = true;
@@ -253,6 +254,7 @@
         paused: true,
         onComplete() {
           jumping = false;
+          landed = performance.now();
           dissolve = null;
           ready(i);
           if (queued) { const d = queued; queued = 0; gesture(d); }
@@ -283,6 +285,7 @@
     };
     const gesture = (dir) => {
       tug(20);
+      heading = dir;
       if (dir > 0) root.classList.add('is-stepped');
       if (waiting) return;
       if (jumping) { queued = dir; return; }
@@ -336,8 +339,10 @@
       const dir = Math.sign(e.deltaY), now = performance.now(), gap = now - lastWheel, abs = Math.abs(e.deltaY) * [1, 16, innerHeight][e.deltaMode];
       if (dir !== lastDir) sum = 0;
       // a mouse notch: large, separate, does not decay
-      const notch = abs >= 48 && gap > 40 && abs >= lastAbs && now - fired > 300;
-      if (gap > 320 || (abs >= 3 && (dir !== lastDir || (gap > 140 && abs > lastAbs))) || notch) armed = true;
+      const big = abs >= 48 && gap > 40, notch = big && abs >= lastAbs && now - fired > 300;
+      // notches during a step and right after it belong to the gesture that began it: no hurry, no second step
+      if (big && dir === heading && (active || jumping || waiting || (gap < 350 && now - landed < 500))) armed = false;
+      else if (gap > 320 || (abs >= 3 && (dir !== lastDir || (gap > 140 && abs > lastAbs))) || notch) armed = true;
       if (armed) sum += abs;
       lastWheel = now; lastDir = dir; lastAbs = abs;
       const eat = () => { e.preventDefault(); e.stopImmediatePropagation(); };
