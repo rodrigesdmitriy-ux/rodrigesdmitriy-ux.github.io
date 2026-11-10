@@ -303,7 +303,6 @@ main > section + section { margin-top: var(--gap); }
 .zal.is-live.is-film .zal__stop { left: 0; top: 0; width: 100%; height: 100%; perspective: none; }
 .zal.is-live.is-film .zal__plane { left: 0; top: 0; width: 100%; height: 100%; aspect-ratio: auto; }
 .zal.is-live.is-film .zal__clip { display: block; position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-.zal.is-live.is-film .zal__plane::after { content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none; opacity: var(--dim, 0); background: radial-gradient(ellipse 75% 70% at 50% 48%, rgb(12 10 8 / 0.42), rgb(12 10 8 / 0.86)); }
 .zal.is-live.is-film .zal__row { left: 0; width: 100%; top: auto; bottom: 6svh; }
 @media (min-width: 768px) {
   .zal.is-live.is-film .zal__row {

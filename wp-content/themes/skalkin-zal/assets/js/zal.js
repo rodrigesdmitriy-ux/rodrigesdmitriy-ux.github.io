@@ -118,12 +118,9 @@
           .set(planes[k], { autoAlpha: 1 }, t)
           .to(planes[k - 1], { autoAlpha: 0, duration: span * 0.03, ease: 'none' }, t);
       }
-      // arrival: the light dips while the camera slows, the sharp still takes over in the dip
-      // before the clip's own dissolve into it, then the light comes back
+      // arrival: the clip ends on the still and holds it, the sharp still takes over inside that hold
       tl.to(o, { f: 1, duration: dur, ease: 'none', onUpdate: () => seek(v, o.f) }, t)
-        .fromTo(planes[k], { '--dim': 0 }, { '--dim': 1, duration: dur * 0.06, ease: 'sine.inOut' }, t + dur * 0.77)
-        .fromTo(still, { autoAlpha: 0 }, { autoAlpha: 1, duration: dur * 0.04, ease: 'sine.inOut' }, t + dur * 0.81)
-        .to(planes[k], { '--dim': 0, duration: dur * 0.16, ease: 'power1.out' }, t + dur * 0.86)
+        .fromTo(still, { autoAlpha: 0 }, { autoAlpha: 1, duration: dur * 0.07, ease: 'sine.inOut' }, t + dur * 0.92)
         .fromTo(list[k], { autoAlpha: 0, y: 18 }, { autoAlpha: 1, y: 0, duration: dur * 0.16, ease: 'expo.out' }, t + dur * 0.84);
     });
     finale(tl, ctx, planes[n - 1], list[n - 1], n * span, span * 0.8);
@@ -134,7 +131,7 @@
 
   // One gesture, one step: wheel, finger, keys and the lamp cord move the page between the stops,
   // and the clip of that step plays by itself. Past the last stop the page scrolls as usual.
-  const RATE = 2;
+  const RATE = 1; // the clips carry their own speed
   const steps = (tl, ctx) => {
     const { root, stage, stops, clips = [] } = ctx;
     const st = tl.scrollTrigger;
@@ -198,8 +195,10 @@
         clip.playbackRate = RATE;
         clip.currentTime = 0;
         clip.play().catch(() => { clip.live = false; });
-        duration = (clip.duration || 9.5) / RATE / 0.86;
-        ease = 'none';
+        // the scroll follows the clip, then passes the rest of the span quickly
+        const run = (clip.duration || 5) / RATE, a = run / (run + 0.2);
+        duration = run + 0.2;
+        ease = (p) => (p < a ? (p / a) * 0.86 : 0.86 + ((p - a) / (1 - a)) * 0.14);
       } else if (dir > 0 && !quick) {
         duration = i === Y.length - 1 ? 2.2 : 1.5;
       }
