@@ -165,6 +165,7 @@
       let i = end;
       while (i > 0 && stops[i] > p + 0.001) i--;
       skip.classList.toggle('is-on', i > 0 && p <= stops[end] + 0.001);
+      if (i > 0 && p > 0) root.classList.add('is-stepped'); // the hint belongs to the first screen
       skip.firstElementChild.textContent = `${i} / ${end}`;
     };
     mark();
