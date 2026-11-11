@@ -52,11 +52,14 @@
     const fitText = () => {
       const html = document.documentElement;
       const tall = matchMedia('(orientation: portrait)').matches;
-      for (const set of tall ? FITS : ['']) {
+      text.style.setProperty('--room', '0px');
+      for (const set of tall ? FITS : ['', 'fit-brief']) {
         html.classList.remove('fit-plain', 'fit-brief', 'fit-solo');
         if (set) html.classList.add(...set.split(' '));
         if (links.offsetTop + links.offsetHeight <= text.clientHeight + 1) break;
       }
+      // landscape: what is left under the buttons spreads the figures out
+      if (!tall) text.style.setProperty('--room', `${Math.max(0, text.clientHeight - links.offsetTop - links.offsetHeight)}px`);
       // the figures under the name give way when they would touch its letters
       const figs = hero.querySelector('.exhibit__figs'), word = hero.querySelector('.sign__last');
       html.classList.remove('fit-nofigs');

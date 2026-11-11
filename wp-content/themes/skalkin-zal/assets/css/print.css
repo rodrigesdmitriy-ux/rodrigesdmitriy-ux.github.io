@@ -2,7 +2,7 @@
 @page { size: A4; margin: 14mm 16mm; }
 html, body { background: #fff !important; color: #000 !important; font-size: 10.5pt; }
 body { line-height: 1.45; }
-.rail, .foot, .cookie, .skip, .cta, .resume-print { display: none !important; }
+.rail, .foot, .cookie, .skip, .cta, .contact, .resume-print { display: none !important; }
 [data-reveal], [data-open], [data-open] img { opacity: 1 !important; transform: none !important; clip-path: none !important; }
 a { color: #000 !important; text-decoration: none !important; }
 .resume-head { padding: 0; display: grid; grid-template-columns: 34mm 1fr; column-gap: 8mm; row-gap: 0; align-items: start; }

@@ -158,6 +158,14 @@
       return true;
     };
     const ready = (i) => { for (const k of [i - 1, i, i + 1]) wake(clips[k], root); };
+    // the stop the film rests on, for the living stills: 1..n, 0 while the page moves or is off the film
+    let resting = 0;
+    const rest = (i) => {
+      const k = clips.length && i > 0 && i <= clips.length ? i : 0;
+      if (k === resting) return;
+      resting = k;
+      root.dispatchEvent(new CustomEvent('zal:rest', { detail: { k } }));
+    };
 
     // step counter and the way past the film
     const skip = root.querySelector('.zal__skip');
@@ -168,6 +176,7 @@
       skip.classList.toggle('is-on', i > 0 && p <= stops[end] + 0.001);
       if (i > 0 && p > 0) root.classList.add('is-stepped'); // the hint belongs to the first screen
       skip.firstElementChild.textContent = `${i} / ${end}`;
+      if (resting && Math.abs(scrollY - ys()[resting]) > 2) rest(0);
     };
     mark();
     addEventListener('scroll', mark, { signal, passive: true });
@@ -179,6 +188,7 @@
       else scrollTo({ top: y, behavior: 'instant' });
     };
     const cancel = () => {
+      rest(0);
       if (!active) return;
       const { tw, clip } = active;
       active = null;
@@ -215,6 +225,7 @@
           landed = performance.now();
           if (clip) { clip.live = false; clip.pause(); seek(clip, 1); }
           ready(i);
+          rest(i);
           // the cord is hidden past the last stop: focus goes on to the section it opened
           if (keep && i === Y.length - 1) {
             const h = next.querySelector('h2');
@@ -259,6 +270,7 @@
           landed = performance.now();
           dissolve = null;
           ready(i);
+          rest(i);
           if (queued) { const d = queued; queued = 0; gesture(d); }
         },
       })
@@ -315,7 +327,9 @@
     const settle = () => {
       if (active || performance.now() < leaving) return;
       const Y = ys(), y = scrollY;
-      if (y > Y.at(-1) + 2 || Y.some((s) => Math.abs(s - y) <= 2)) return;
+      if (y > Y.at(-1) + 2) return;
+      const at = Y.findIndex((s) => Math.abs(s - y) <= 2);
+      if (at >= 0) return rest(at);
       const i = Y.reduce((b, s, k) => (Math.abs(s - y) < Math.abs(Y[b] - y) ? k : b), 0);
       go(i, Math.sign(Y[i] - y), true);
     };
