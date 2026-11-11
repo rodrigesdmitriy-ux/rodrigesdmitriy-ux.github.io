@@ -836,7 +836,7 @@ main > section + section { margin-top: var(--gap); }
 .case-cover__img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .results { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr)); gap: 40px var(--gutter); }
 .results li { container-type: inline-size; }
-.result__num { display: block; font: var(--w-wide) min(clamp(2.5rem, 1.3rem + 3.6vw, 5rem), 19cqw, 95cqw / var(--n, 5))/0.95 var(--wide); letter-spacing: -0.03em; }
+.result__num { display: block; font: var(--w-wide) min(clamp(2.5rem, 1.3rem + 3.6vw, 5rem), 19cqw, 95cqw / var(--n, 5))/0.95 var(--wide); letter-spacing: -0.03em; color: var(--accent); }
 .result__ttl { display: block; margin-top: 14px; font-weight: 500; }
 .result__sub { display: block; margin-top: 4px; color: var(--muted); font-size: var(--step-small); }
 .stack { display: flex; flex-wrap: wrap; gap: 8px; }
