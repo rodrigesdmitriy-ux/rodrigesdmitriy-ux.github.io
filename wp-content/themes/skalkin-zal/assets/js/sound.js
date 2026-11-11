@@ -1,4 +1,4 @@
-// Scene sound, off by default: a jazz loop while the scene is on screen, one flight per clip with its on-screen actions, the cord click.
+// Home page sound, off by default: a jazz loop down the whole page, one flight per clip with its on-screen actions, the cord click.
 // Nothing is fetched until the visitor turns it on; zal.js reports flights with zal:flight and zal:cancel.
 (() => {
   const btn = document.querySelector('.sound');
@@ -31,9 +31,8 @@
   };
   const scene = () => {
     if (!ctx) return;
-    const solid = rail.classList.contains('is-solid');
     const busy = [...flights].some((f) => f.src);
-    fade(bed.gain, on && !solid ? (busy ? DUCK : 1) : 0, solid ? 0.6 : busy ? 0.5 : 2);
+    fade(bed.gain, on ? (busy ? DUCK : 1) : 0, busy ? 0.5 : 2);
   };
 
   const where = (f) => f.pos + (ctx.currentTime - f.at) * f.speed;
@@ -106,6 +105,7 @@
     on = want;
     btn.setAttribute('aria-pressed', String(on));
     btn.setAttribute('aria-label', on ? btn.dataset.turnOff : btn.dataset.turnOn);
+    rail.classList.toggle('is-sounding', on); // keeps the toggle in the docked rail below the scene
     if (on) {
       if (!ctx) {
         ctx = new AC();
@@ -145,7 +145,6 @@
     if (!ok && on) toggle(false);
   };
   new MutationObserver(fit).observe(zal, { attributes: true, attributeFilter: ['class'] });
-  new MutationObserver(scene).observe(rail, { attributes: true, attributeFilter: ['class'] });
   fit();
   document.addEventListener('visibilitychange', () => {
     if (!ctx || !on) return;

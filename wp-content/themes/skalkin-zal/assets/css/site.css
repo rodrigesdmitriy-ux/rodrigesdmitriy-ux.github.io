@@ -938,7 +938,7 @@ main > section + section { margin-top: var(--gap); }
 /* scene sound toggle */
 .sound { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-width: 44px; min-height: 44px; padding: 0; border: 0; background: none; color: var(--ink); font: inherit; cursor: pointer; transition: opacity 400ms ease, visibility 400ms; }
 .sound[hidden], html:not(.js) .sound { display: none; }
-.rail.is-solid .sound { opacity: 0; visibility: hidden; pointer-events: none; }
+.rail.is-solid:not(.is-sounding) .sound { opacity: 0; visibility: hidden; pointer-events: none; }
 .sound__bars { display: flex; align-items: flex-end; gap: 3px; height: 16px; }
 .sound__bars i { width: 2px; height: 100%; border-radius: 1px; background: var(--accent); opacity: 0.75; transform: scaleY(var(--h)); transform-origin: bottom; transition: transform 300ms var(--ease-out), opacity 300ms ease; }
 .sound__bars i:nth-child(1) { --h: 0.3; --on: 0.55; --t: 1.3s; --d: 0s; }
@@ -950,9 +950,9 @@ main > section + section { margin-top: var(--gap); }
 .sound__word { text-decoration: underline 1px transparent; text-underline-offset: 0.25em; transition: text-decoration-color var(--t-hover) ease; }
 .sound:hover .sound__word { text-decoration-color: currentColor; }
 @media (max-width: 1099px) { .sound__word { display: none; } }
-/* phones: the toggle takes the left edge, the name comes back with the solid rail */
+/* phones: the toggle takes the left edge, the name comes back with the solid rail while the sound is off */
 @media (max-width: 479px) {
-  .rail.has-sound:not(.is-solid) .rail__name { display: none; }
+  .rail.has-sound:not(.is-solid) .rail__name, .rail.has-sound.is-sounding .rail__name { display: none; }
   .rail.has-sound .sound { position: absolute; left: calc(var(--m) - 14px); top: 50%; transform: translateY(-50%); }
 }
 @media (prefers-reduced-motion: reduce) {
