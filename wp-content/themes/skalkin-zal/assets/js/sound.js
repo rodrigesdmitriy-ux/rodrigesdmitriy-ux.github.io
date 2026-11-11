@@ -9,7 +9,7 @@
 
   const urls = {};
   for (const u of btn.dataset.sounds.split(',')) urls[u.trim().split('/').pop().split(/[.?]/)[0]] = u.trim();
-  const LOOP = [0.5, 51.7]; // the jazz loops inside its periodic margins, s
+  const LOOP = [0.5, 73.227278]; // the jazz loops inside its periodic margins, s
   const DUCK = 0.5; // the jazz steps back while a flight plays
   const buffers = {}, pending = {}, flights = new Set();
   let ctx = null, out = null, bed = null, bedOn = false, on = false, flight = null, sleep = 0;
